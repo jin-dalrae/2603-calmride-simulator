@@ -26,9 +26,18 @@ export function ScenarioPicker() {
         disabled={loading}
       >
         <option value="">Select scenario...</option>
-        {availableScenarios.map(f => (
-          <option key={f} value={f}>{f.replace('.json', '').replace(/-/g, ' ')}</option>
-        ))}
+
+        <optgroup label="High-Fidelity (Waymax/WOMD)" style={{ background: '#111827' }}>
+          {availableScenarios.filter(f => f.startsWith('womd-')).map(f => (
+            <option key={f} value={f}>{f.toUpperCase()}</option>
+          ))}
+        </optgroup>
+
+        <optgroup label="Synthetic Samples" style={{ background: '#111827' }}>
+          {availableScenarios.filter(f => !f.startsWith('womd-')).map(f => (
+            <option key={f} value={f}>{f.replace('.json', '').replace(/-/g, ' ')}</option>
+          ))}
+        </optgroup>
       </select>
       {loading && <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>Loading...</div>}
       {error && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>{error}</div>}
