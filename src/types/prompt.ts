@@ -1,4 +1,4 @@
-export type Personality = 'professional' | 'friendly' | 'minimal'
+export type Personality = 'professional' | 'friendly' | 'minimal' | 'comfort' | 'technical' | 'concierge'
 
 export interface ToneSettings {
   anxietyLevel: number    // 0-100

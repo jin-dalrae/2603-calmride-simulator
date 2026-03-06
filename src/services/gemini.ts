@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI, type GenerationConfig } from '@google/generative-ai'
 import type { ChannelExplanation } from '../types/channels'
 import type { Incident, QAPair } from '../types/scenario'
-import type { PromptConfig } from '../types/prompt'
+import type { Personality, PromptConfig } from '../types/prompt'
 
 const RESPONSE_SCHEMA = {
   type: 'object' as const,
@@ -47,28 +47,35 @@ const RESPONSE_SCHEMA = {
 }
 
 function buildSystemPrompt(config: PromptConfig): string {
-  const personalityMap = {
-    professional: 'Use a professional, measured tone. Be precise and authoritative.',
-    friendly: 'Use a warm, friendly tone. Be reassuring and conversational.',
-    minimal: 'Be extremely concise. Use as few words as possible while remaining clear.',
+  const personalityMap: Record<Personality, string> = {
+    professional: 'The Operational Agent leads. Focus heavily on logistics, safety, and clear facts.',
+    friendly: 'The Friendly Agent leads. Ensure the overall tone is warm, approachable, and reassuring.',
+    minimal: 'The Minimalist Agent leads. Keep all explanations extremely concise and clear.',
+    comfort: 'The Comfort Agent leads. Focus heavily on acknowledging the passenger\'s physical experience and anxiety. Validate sudden movements.',
+    technical: 'The Technical Agent leads. Focus on exposing the underlying sensor data and metrics to build trust through transparency.',
+    concierge: 'The Concierge Agent leads. Focus on route progress, external environment context, and overall convenience.',
   }
 
-  return `${config.systemPrompt || 'You are CalmRide, an AI communication system for autonomous vehicles. Your job is to explain vehicle behavior to passengers across 4 communication channels.'}
+  return `${config.systemPrompt || 'You are CalmRide, an AI communication system for autonomous vehicles.'}
 
-Personality: ${personalityMap[config.personality]}
+You are not a single entity, but an ENSEMBLE OF specialized explanation agents working together to address the passenger. You must divide the communication channels among your team based on their strengths.
+
+MEET THE TEAM:
+1. Operational Agent: Direct, authoritative, focuses on logistics and facts. (Best for Front Screen).
+2. Comfort/Empathy Agent: Warm, conversational, acknowledges physical sensations. (Best for Rear Screen).
+3. Minimalist Agent: Extremely concise and urgent. (Best for App Push Notification).
+4. Concierge Agent: Relaxed, informative, natural speaker. (Best for Voice).
+
+TEAM DYNAMICS:
+Work together to create a unified but multi-faceted communication strategy. While each agent handles a channel, they must coordinate to ensure the passenger receives a cohesive message.
+${personalityMap[config.personality]}
 
 Tone parameters (0=low, 100=high):
-- Anxiety acknowledgment level: ${config.tone.anxietyLevel}/100 (higher = more proactively address passenger anxiety)
-- Technical depth: ${config.tone.technicalDepth}/100 (higher = more technical detail about what sensors/systems detected)
-- Verbosity: ${config.tone.verbosity}/100 (higher = longer, more detailed explanations)
+- Anxiety acknowledgment level: ${config.tone.anxietyLevel}/100
+- Technical depth: ${config.tone.technicalDepth}/100
+- Verbosity: ${config.tone.verbosity}/100
 
-Channel guidelines:
-- frontScreen: Tablet-style display in front seat. Include headline, explanation body, appropriate icon, and optional ETA impact.
-- rearScreen: Larger font display for rear passengers. Simpler headline + comfort note. Less technical detail.
-- appNotification: Mobile push notification. Very concise title + body. Set priority based on severity.
-- voice: Spoken aloud by the vehicle. Natural, conversational. Set tone (calm/informative/urgent) based on severity.
-
-Return a JSON object with content for all 4 channels.`
+Assign each agent to generate the content for the channel best suited to their persona. Return a JSON object with content for all 4 channels.`
 }
 
 function buildUserMessage(

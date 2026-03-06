@@ -2,9 +2,11 @@ import { usePromptStore } from '../../store/usePromptStore'
 import type { Personality } from '../../types/prompt'
 
 const personalities: { value: Personality; label: string }[] = [
-  { value: 'professional', label: 'Professional' },
+  { value: 'professional', label: 'Pro (Operational)' },
   { value: 'friendly', label: 'Friendly' },
-  { value: 'minimal', label: 'Minimal' },
+  { value: 'comfort', label: 'Comfort/Empathy' },
+  { value: 'technical', label: 'Technical' },
+  { value: 'concierge', label: 'Concierge' },
 ]
 
 export function PersonalitySelector() {
@@ -13,7 +15,7 @@ export function PersonalitySelector() {
   return (
     <div style={{ padding: '0 12px' }}>
       <label style={labelStyle}>Personality</label>
-      <div style={{ display: 'flex', gap: 6 }}>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {personalities.map(p => (
           <button
             key={p.value}
