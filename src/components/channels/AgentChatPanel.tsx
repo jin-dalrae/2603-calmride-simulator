@@ -3,11 +3,11 @@ import { useExplanationStore } from '../../store/useExplanationStore'
 import { usePromptStore } from '../../store/usePromptStore'
 
 const AGENT_COLORS: Record<string, string> = {
-    Operational: '#3b82f6', // blue
-    Comfort: '#10b981',     // green
-    Minimalist: '#ef4444',  // red
-    Concierge: '#f59e0b',   // amber
-    Technical: '#8b5cf6',   // purple
+    Operational: '#38bdf8',
+    Comfort: '#4ade80',
+    Minimalist: '#f87171',
+    Concierge: '#fbbf24',
+    Technical: '#c084fc',
 }
 
 export function AgentChatPanel() {
@@ -19,23 +19,22 @@ export function AgentChatPanel() {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight
         }
-    }, [current, history])
+    }, [current, history, revealedMessages])
 
     const chatMessages = current?.agentConversation || []
 
     useEffect(() => {
-        // If there's no chat, do nothing
         if (!current || loading || chatMessages.length === 0) return
 
         if (revealedMessages < chatMessages.length) {
             const timer = setTimeout(() => {
                 setRevealedMessages(revealedMessages + 1)
-            }, 1500) // 1.5s delay between messages
+            }, 1500)
             return () => clearTimeout(timer)
         } else if (revealedMessages === chatMessages.length && !consensusReached) {
             const timer = setTimeout(() => {
                 setConsensusReached(true)
-            }, 1000) // 1s delay before consensus message pops
+            }, 1000)
             return () => clearTimeout(timer)
         }
     }, [current, loading, chatMessages.length, revealedMessages, consensusReached, setRevealedMessages, setConsensusReached])
@@ -44,64 +43,86 @@ export function AgentChatPanel() {
 
     return (
         <div style={{
-            width: 350,
-            background: '#111827',
-            borderLeft: '1px solid #1f2937',
+            flex: 1,
+            background: '#050505',
             display: 'flex',
             flexDirection: 'column',
             height: '100%',
+            borderLeft: '1px solid #111',
+            overflow: 'hidden'
         }}>
             <div style={{
-                padding: '16px',
-                borderBottom: '1px solid #1f2937',
+                padding: '20px 16px',
+                borderBottom: '1px solid #111',
+                background: '#080808',
                 display: 'flex',
-                flexDirection: 'column',
+                justifyContent: 'space-between',
+                alignItems: 'baseline'
             }}>
-                <strong style={{ color: '#f3f4f6', fontSize: '15px' }}>Team Communications</strong>
-                <span style={{ fontSize: '12px', color: '#9ca3af', marginTop: 4 }}>
-                    Lead Agent: <span style={{ color: '#3b82f6', textTransform: 'capitalize' }}>{currentPersonality}</span>
-                </span>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <strong style={{ color: '#f3f4f6', fontSize: '13px', letterSpacing: '1px', textTransform: 'uppercase' }}>Ensemble_Deliberation</strong>
+                    <span style={{ fontSize: '10px', color: '#666', marginTop: 4, fontFamily: 'monospace' }}>
+                        POLICY: <span style={{ color: '#38bdf8' }}>{currentPersonality.toUpperCase()}</span>
+                    </span>
+                </div>
+                <div style={{ fontSize: '9px', color: '#444', fontFamily: 'monospace' }}>
+                    STATUS: {loading ? 'ANALYZING' : (consensusReached ? 'RESOLVED' : 'WAITING')}
+                </div>
             </div>
 
-            <div ref={scrollRef} style={{
+            <div ref={scrollRef} className="custom-scrollbar" style={{
                 flex: 1,
                 overflowY: 'auto',
-                padding: '16px',
+                padding: '20px 16px',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 16,
+                gap: 20,
             }}>
                 {loading && (
-                    <div style={{ color: '#9ca3af', fontSize: 13, textAlign: 'center', fontStyle: 'italic' }}>
-                        Agents are analyzing the situation...
+                    <div style={{ color: '#666', fontSize: 11, textAlign: 'center', fontFamily: 'monospace' }}>
+                        [LOADING_NEURAL_WEIGHTS...]
                     </div>
                 )}
 
                 {!loading && chatMessages.length === 0 && (
-                    <div style={{ color: '#6b7280', fontSize: 13, textAlign: 'center' }}>
-                        No active communications. Play the scenario to trigger an event.
+                    <div style={{ color: '#333', fontSize: 11, textAlign: 'center', fontFamily: 'monospace', marginTop: 100 }}>
+                        SYSTEM_IDLE: NO_ACTIVE_INCIDENTS
                     </div>
                 )}
 
                 {visibleMessages.map((msg, i) => (
-                    <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <span style={{
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: AGENT_COLORS[msg.speaker] || '#9ca3af',
-                            textTransform: 'uppercase',
-                            letterSpacing: 0.5
+                    <div key={i} style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: 6,
+                        animation: 'fadeIn 0.3s ease-out forwards'
+                    }}>
+                        <div style={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
                         }}>
-                            {msg.speaker} Agent
-                        </span>
+                            <span style={{
+                                fontSize: '10px',
+                                fontWeight: 700,
+                                color: AGENT_COLORS[msg.speaker] || '#666',
+                                textTransform: 'uppercase',
+                                letterSpacing: 1,
+                                fontFamily: 'monospace'
+                            }}>
+                                {msg.speaker}_AGENT
+                            </span>
+                            <span style={{ fontSize: '9px', color: '#222' }}>{new Date().toLocaleTimeString()}</span>
+                        </div>
                         <div style={{
-                            background: '#1f2937',
-                            padding: '10px 12px',
-                            borderRadius: '0 8px 8px 8px',
-                            color: '#d1d5db',
-                            fontSize: 13,
-                            lineHeight: 1.5,
-                            borderLeft: `3px solid ${AGENT_COLORS[msg.speaker] || '#9ca3af'}`
+                            background: '#0a0a0a',
+                            padding: '12px 14px',
+                            borderRadius: '4px',
+                            color: '#ccc',
+                            fontSize: '13px',
+                            lineHeight: 1.6,
+                            border: `1px solid #111`,
+                            borderLeft: `2px solid ${AGENT_COLORS[msg.speaker] || '#666'}`
                         }}>
                             {msg.text}
                         </div>
@@ -109,17 +130,45 @@ export function AgentChatPanel() {
                 ))}
 
                 {revealedMessages > 0 && !consensusReached && (
-                    <div style={{ color: '#9ca3af', fontSize: 13, fontStyle: 'italic', paddingLeft: 12 }}>
-                        Agents deliberating...
+                    <div style={{ color: '#444', fontSize: 10, fontFamily: 'monospace', paddingLeft: 4 }}>
+                        {'>'} SYNCING_COMMUNICATIONS...
                     </div>
                 )}
 
                 {consensusReached && (
-                    <div style={{ marginTop: 8, borderTop: '1px solid #374151', paddingTop: 12 }}>
-                        <span style={{ color: '#10b981', fontSize: 11, fontWeight: 'bold' }}>SYSTEM: Consensus reached. Proceeding to broadcast to passengers.</span>
+                    <div style={{ 
+                        marginTop: 10, 
+                        border: '1px dashed #111', 
+                        padding: '12px',
+                        background: 'rgba(74, 222, 128, 0.02)',
+                        borderRadius: '4px'
+                    }}>
+                        <span style={{ color: '#4ade80', fontSize: '10px', fontWeight: 'bold', fontFamily: 'monospace', letterSpacing: 0.5 }}>
+                            RESOLVED: Consensus reached. Broadcasting finalized content to interface channels.
+                        </span>
                     </div>
                 )}
             </div>
+
+            <style>{`
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(5px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 4px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: #111;
+                    border-radius: 2px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: #222;
+                }
+            `}</style>
         </div>
     )
 }

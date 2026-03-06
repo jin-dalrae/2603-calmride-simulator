@@ -33,21 +33,43 @@ from config import WOMD_DATA_DIR, MAX_SCENARIOS, MAX_AGENTS_PER_SCENARIO
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Try to import Waymax — gracefully degrade if unavailable
-# ---------------------------------------------------------------------------
 _WAYMAX_AVAILABLE = False
-try:
-    from waymax import config as waymax_config
-    from waymax import dataloader as waymax_dataloader
-    from waymax import datatypes as waymax_datatypes
+waymax_config = None
+waymax_dataloader = None
+waymax_datatypes = None
 
-    _WAYMAX_AVAILABLE = True
-    logger.info("✅ Waymax loaded successfully")
-except ImportError:
-    logger.warning(
-        "⚠️  Waymax not installed — falling back to local sample scenarios. "
-        "Install with: pip install git+https://github.com/waymo-research/waymax.git@main#egg=waymo-waymax"
-    )
+
+def _ensure_waymax():
+    global _WAYMAX_AVAILABLE, waymax_config, waymax_dataloader, waymax_datatypes
+    if waymax_config is not None:
+        return _WAYMAX_AVAILABLE
+
+    try:
+        from waymax import config, dataloader, datatypes
+
+        waymax_config = config
+        waymax_dataloader = dataloader
+        waymax_datatypes = datatypes
+        _WAYMAX_AVAILABLE = True
+        logger.info("✅ Waymax loaded successfully")
+    except ImportError:
+        _WAYMAX_AVAILABLE = False
+        logger.warning("⚠️  Waymax not installed — falling back to local samples.")
+    return _WAYMAX_AVAILABLE
+
+    try:
+        from waymax import config, dataloader, datatypes
+
+        waymax_config = config
+        waymax_dataloader = dataloader
+        waymax_datatypes = datatypes
+        _WAYMAX_AVAILABLE = True
+        logger.info("✅ Waymax loaded successfully")
+    except ImportError:
+        _WAYMAX_AVAILABLE = False
+        logger.warning("⚠️  Waymax not installed — falling back to local samples.")
+    return _WAYMAX_AVAILABLE
+
 
 # ---------------------------------------------------------------------------
 # In-memory scenario cache
@@ -56,7 +78,9 @@ _scenario_index: dict[str, ScenarioSummaryModel] = {}
 _scenario_cache: dict[str, ParsedScenarioModel] = {}
 
 # Path to local sample scenarios (fallback)
-SAMPLE_DIR = Path(__file__).resolve().parent.parent / "public" / "sample-scenarios"
+SAMPLE_DIR = (
+    Path(__file__).resolve().parent.parent.parent / "public" / "sample-scenarios"
+)
 
 
 # ===========================================================================
@@ -68,9 +92,9 @@ def initialize() -> None:
     """Build the scenario index at startup."""
     _load_sample_scenarios()
 
-    if _WAYMAX_AVAILABLE and WOMD_DATA_DIR.exists():
+    if _ensure_waymax() and WOMD_DATA_DIR.exists():
         _load_waymax_scenarios()
-    elif _WAYMAX_AVAILABLE and not WOMD_DATA_DIR.exists():
+    elif _ensure_waymax() and not WOMD_DATA_DIR.exists():
         logger.warning(
             f"Waymax is installed but WOMD data directory not found at {WOMD_DATA_DIR}. "
             f"Set WOMD_DATA_DIR env var to point to your dataset."
@@ -91,7 +115,7 @@ def get_scenario(scenario_id: str) -> Optional[ParsedScenarioModel]:
 
     # Lazy-load from Waymax if indexed but not cached
     summary = _scenario_index.get(scenario_id)
-    if summary and summary.source == "womd" and _WAYMAX_AVAILABLE:
+    if summary and summary.source == "womd" and _ensure_waymax():
         scenario = _load_single_waymax_scenario(scenario_id)
         if scenario:
             _scenario_cache[scenario_id] = scenario
@@ -304,7 +328,7 @@ def _generate_synthetic_agents(
 
 def _load_waymax_scenarios() -> None:
     """Index scenarios from WOMD via waymax.dataloader."""
-    if not _WAYMAX_AVAILABLE:
+    if not _ensure_waymax():
         return
 
     try:
@@ -348,7 +372,7 @@ def _load_waymax_scenarios() -> None:
 
 def _load_single_waymax_scenario(scenario_id: str) -> Optional[ParsedScenarioModel]:
     """Load and convert a single WOMD scenario to CalmRide format."""
-    if not _WAYMAX_AVAILABLE:
+    if not _ensure_waymax():
         return None
 
     try:
@@ -488,7 +512,7 @@ def _convert_waymax_state(state, scenario_id: str) -> ParsedScenarioModel:
 def _extract_waymax_map_features(state) -> list[MapFeatureModel]:
     """Extract road graph features from a Waymax state."""
     features: list[MapFeatureModel] = []
-    if not _WAYMAX_AVAILABLE or state is None:
+    if not _ensure_waymax() or state is None:
         return features
 
     try:
@@ -671,6 +695,28 @@ def _classify_incidents_simple(
                     )
                 )
                 count += 1
+
+    if traj:
+        duration = traj[-1].t - traj[0].t
+        interval = 8.0
+        t = interval
+        while t < duration:
+            point = next((p for p in traj if p.t >= t), traj[-1])
+            has_nearby = any(abs(inc.timestamp - point.t) < 2.0 for inc in incidents)
+            if not has_nearby:
+                incidents.append(
+                    IncidentModel(
+                        id=f"incident-{count}",
+                        type="routine_update",
+                        timestamp=point.t,
+                        x=point.x,
+                        y=point.y,
+                        description="Routine status update: Normal driving conditions.",
+                        severity="low",
+                    )
+                )
+                count += 1
+            t += interval
 
     return _deduplicate_incidents(incidents)
 

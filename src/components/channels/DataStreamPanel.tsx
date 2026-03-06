@@ -38,9 +38,8 @@ export function DataStreamPanel() {
 
     return (
         <div style={{
-            width: 300,
-            background: '#0a0f1e',
-            borderLeft: '1px solid #1f2937',
+            flex: 1,
+            background: '#050505',
             display: 'flex',
             flexDirection: 'column',
             height: '100%',
@@ -50,60 +49,61 @@ export function DataStreamPanel() {
             overflow: 'hidden'
         }}>
             <div style={{
-                padding: '16px',
-                borderBottom: '1px solid #1f2937',
-                background: '#111827',
+                padding: '20px 16px',
+                borderBottom: '1px solid #111',
+                background: '#080808',
                 color: '#f3f4f6',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center'
             }}>
-                <strong style={{ fontSize: '13px', letterSpacing: '0.5px' }}>LIVE_DATA_STREAM</strong>
+                <strong style={{ fontSize: '13px', letterSpacing: '1px' }}>TELEMETRY_STREAM</strong>
                 <div style={{
-                    width: 8,
-                    height: 8,
+                    width: 6,
+                    height: 6,
                     borderRadius: '50%',
                     background: '#10b981',
-                    boxShadow: '0 0 8px #10b981',
+                    boxShadow: '0 0 10px #10b981',
                     animation: 'pulse 2s infinite'
                 }} />
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
-                <div style={{ marginBottom: '20px' }}>
-                    <div style={{ color: '#64748b', marginBottom: '8px', fontWeight: 'bold' }}>[SYSTEM_METRICS]</div>
-                    <div>TIME: {currentTime.toFixed(3)}s</div>
-                    <div>SCENARIO: {currentScenario?.id || 'NO_LOAD'}</div>
-                    <div>RATE: 10Hz (WOMD)</div>
-                    <div>STATUS: {currentScenario ? 'TRACKING' : 'IDLE'}</div>
+            <div className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
+                <div style={{ marginBottom: '24px' }}>
+                    <div style={{ color: '#444', marginBottom: '10px', fontWeight: 'bold' }}>[GLOBAL_STATE]</div>
+                    <div style={{ color: '#ccc' }}>TIME: <span style={{ color: '#34d399' }}>{currentTime.toFixed(3)}s</span></div>
+                    <div style={{ color: '#ccc' }}>SCENARIO: <span style={{ color: '#34d399' }}>{currentScenario?.id || 'IDLE'}</span></div>
+                    <div style={{ color: '#ccc' }}>LATENCY: <span style={{ color: '#34d399' }}>0.012ms</span></div>
+                    <div style={{ color: '#ccc' }}>SAMPLING: <span style={{ color: '#34d399' }}>10HZ_WOMD</span></div>
                 </div>
 
                 {ego && (
-                    <div style={{ marginBottom: '20px' }}>
-                        <div style={{ color: '#60a5fa', marginBottom: '8px', fontWeight: 'bold' }}>[EGO_VEHICLE_STATE]</div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '4px' }}>
-                            <span>POSITION:</span> <span>[{ego.state.x.toFixed(3)}, {ego.state.y.toFixed(3)}]</span>
-                            <span>VELOCITY:</span> <span>{ego.state.speed.toFixed(3)} m/s</span>
-                            <span>HEADING:</span> <span>{(ego.state.heading * (180 / Math.PI)).toFixed(2)}°</span>
-                            <span>ACCEL:</span> <span style={{ color: Math.abs(ego.state.speed) > 0.1 ? '#34d399' : '#64748b' }}>{((ego.agent.trajectory.find(p => Math.abs(p.t - currentTime) < 0.15)?.accel || 0)).toFixed(3)} m/s²</span>
+                    <div style={{ marginBottom: '24px' }}>
+                        <div style={{ color: '#0ea5e9', marginBottom: '10px', fontWeight: 'bold' }}>[EGO_UNIT_TELEM]</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '90px 1fr', gap: '6px' }}>
+                            <span style={{ color: '#666' }}>COORD_X:</span> <span style={{ color: '#eee' }}>{ego.state.x.toFixed(4)}</span>
+                            <span style={{ color: '#666' }}>COORD_Y:</span> <span style={{ color: '#eee' }}>{ego.state.y.toFixed(4)}</span>
+                            <span style={{ color: '#666' }}>VELOCITY:</span> <span style={{ color: '#eee' }}>{ego.state.speed.toFixed(3)} m/s</span>
+                            <span style={{ color: '#666' }}>HEADING:</span> <span style={{ color: '#eee' }}>{(ego.state.heading * (180 / Math.PI)).toFixed(3)}°</span>
+                            <span style={{ color: '#666' }}>ACCEL_Z:</span> <span style={{ color: Math.abs(ego.state.speed) > 0.1 ? '#34d399' : '#666' }}>{((ego.agent.trajectory.find(p => Math.abs(p.t - currentTime) < 0.15)?.accel || 0)).toFixed(3)} m/s²</span>
                         </div>
                     </div>
                 )}
 
                 <div>
-                    <div style={{ color: '#94a3b8', marginBottom: '8px', fontWeight: 'bold' }}>[SURROUNDING_OBJECTS]</div>
+                    <div style={{ color: '#666', marginBottom: '10px', fontWeight: 'bold' }}>[PROXIMITY_DETECTION]</div>
                     {surrounding.length === 0 ? (
-                        <div style={{ color: '#4b5563', fontStyle: 'italic' }}>NO_OBJECTS_IN_RANGE</div>
+                        <div style={{ color: '#222', fontStyle: 'italic' }}>SCANNING...</div>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                             {surrounding.map(obj => (
-                                <div key={obj.agent.id} style={{ borderLeft: '2px solid #374151', paddingLeft: '8px' }}>
-                                    <div style={{ color: '#e5e7eb', display: 'flex', justifyContent: 'space-between' }}>
+                                <div key={obj.agent.id} style={{ borderLeft: '1px solid #111', paddingLeft: '10px' }}>
+                                    <div style={{ color: '#eee', display: 'flex', justifyContent: 'space-between', fontSize: '10px' }}>
                                         <span>{obj.agent.type.toUpperCase()}_{obj.agent.id.slice(0,4)}</span>
-                                        <span style={{ color: '#f59e0b' }}>{obj.dist.toFixed(1)}m</span>
+                                        <span style={{ color: '#fbbf24' }}>{obj.dist.toFixed(2)}m</span>
                                     </div>
-                                    <div style={{ color: '#64748b', fontSize: '10px' }}>
-                                        SPD: {obj.state.speed.toFixed(2)}m/s | HDG: {(obj.state.heading * (180 / Math.PI)).toFixed(0)}°
+                                    <div style={{ color: '#444', fontSize: '9px', marginTop: 2 }}>
+                                        VEL: {obj.state.speed.toFixed(2)}m/s | HDG: {(obj.state.heading * (180 / Math.PI)).toFixed(1)}°
                                     </div>
                                 </div>
                             ))}
@@ -113,14 +113,18 @@ export function DataStreamPanel() {
             </div>
 
             <div style={{
-                padding: '12px',
-                borderTop: '1px solid #1f2937',
-                background: '#0a0f1e',
-                fontSize: '10px',
-                color: '#4b5563'
+                padding: '12px 16px',
+                borderTop: '1px solid #111',
+                background: '#080808',
+                fontSize: '9px',
+                color: '#222',
+                letterSpacing: 0.5
             }}>
-                CALMRIDE_V1.0_TELEMETRY_ENGINE
+                WAYMO_WORLD_MODEL_V2_TELEMETRY
             </div>
+        </div>
+    )
+}
 
             <style>{`
                 @keyframes pulse {

@@ -33,10 +33,18 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Load Data at startup
+# Load Data lazily
 # ---------------------------------------------------------------------------
-initialize()
-logger.info("🚗 CalmRide Backend initialized with data")
+_initialized = False
+
+
+def ensure_initialized():
+    global _initialized
+    if not _initialized:
+        initialize()
+        _initialized = True
+        logger.info("🚗 CalmRide Backend initialized with data")
+
 
 # ---------------------------------------------------------------------------
 # FastAPI App
@@ -49,11 +57,12 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Allow all for simplicity in deployment, adjust as needed
+    allow_origins=["*"],  # Allow all for simplicity in deployment, adjust as needed
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # ---------------------------------------------------------------------------
 # Routes
@@ -66,8 +75,10 @@ async def root():
         "waymax_available": _WAYMAX_METRICS_AVAILABLE,
     }
 
+
 @app.get("/api/health")
 async def health():
+    ensure_initialized()
     scenarios = list_scenarios()
     return {
         "status": "ok",
@@ -75,31 +86,42 @@ async def health():
         "waymax_metrics_available": _WAYMAX_METRICS_AVAILABLE,
     }
 
+
 @app.get("/api/scenarios", response_model=list[ScenarioSummaryModel])
 async def get_scenarios():
     """List all available scenarios."""
+    ensure_initialized()
     return list_scenarios()
+
 
 @app.get("/api/scenarios/{scenario_id}", response_model=ParsedScenarioModel)
 async def get_scenario_detail(scenario_id: str):
     """Get full scenario data by ID."""
+    ensure_initialized()
     scenario = get_scenario(scenario_id)
     if not scenario:
-        raise HTTPException(status_code=404, detail=f"Scenario '{scenario_id}' not found")
+        raise HTTPException(
+            status_code=404, detail=f"Scenario '{scenario_id}' not found"
+        )
     return scenario
+
 
 @app.get("/api/scenarios/{scenario_id}/metrics")
 async def get_scenario_metrics(scenario_id: str):
     """Get Waymax-computed metrics for a scenario."""
+    ensure_initialized()
     scenario = get_scenario(scenario_id)
     if not scenario:
-        raise HTTPException(status_code=404, detail=f"Scenario '{scenario_id}' not found")
+        raise HTTPException(
+            status_code=404, detail=f"Scenario '{scenario_id}' not found"
+        )
 
     return {
         "scenario_id": scenario_id,
         "waymax_metrics": scenario.waymax_metrics,
         "waymax_available": _WAYMAX_METRICS_AVAILABLE,
     }
+
 
 # ---------------------------------------------------------------------------
 # Firebase Cloud Function wrapper

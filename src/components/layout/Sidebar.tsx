@@ -8,38 +8,61 @@ import { DataAccumulator } from '../timeline/DataAccumulator'
 export function Sidebar() {
   return (
     <div style={{
-      width: 300,
-      background: '#111827',
-      borderRight: '1px solid #1f2937',
+      width: 280,
+      background: '#050505',
       display: 'flex',
       flexDirection: 'column',
-      gap: 16,
-      overflowY: 'auto',
+      height: '100%',
+      overflow: 'hidden'
     }}>
       <div style={{
-        padding: '16px 12px 8px',
-        fontSize: 16,
-        fontWeight: 700,
+        padding: '24px 16px 16px',
+        fontSize: 14,
+        fontWeight: 800,
         color: '#f3f4f6',
-        borderBottom: '1px solid #1f2937',
+        letterSpacing: '2px',
+        textTransform: 'uppercase',
+        borderBottom: '1px solid #111',
+        background: '#080808'
       }}>
-        CalmRide Simulator
+        CALMRIDE_SIM
       </div>
 
-      <ScenarioPicker />
+      <div className="custom-scrollbar" style={{ 
+        flex: 1, 
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 24,
+        padding: '20px 0'
+      }}>
+        <ScenarioPicker />
 
-      <div style={{ borderTop: '1px solid #1f2937', paddingTop: 12 }}>
-        <PersonalitySelector />
+        <div style={{ borderTop: '1px solid #111', paddingTop: 20 }}>
+          <PersonalitySelector />
+        </div>
+
+        <ToneSliders />
+
+        <SystemPromptEditor />
+
+        <div style={{ padding: '0 12px' }}>
+          <RegenerateButton />
+        </div>
+
+        <div style={{ borderTop: '1px solid #111', minHeight: 180, flex: '0 0 auto' }}>
+          <DataAccumulator />
+        </div>
       </div>
 
-      <ToneSliders />
-
-      <SystemPromptEditor />
-
-      <RegenerateButton />
-
-      <div style={{ borderTop: '1px solid #1f2937', minHeight: 180, flex: '0 0 auto' }}>
-        <DataAccumulator />
+      <div style={{ 
+        padding: '12px 16px', 
+        fontSize: '9px', 
+        color: '#222', 
+        borderTop: '1px solid #111',
+        fontFamily: 'monospace' 
+      }}>
+        CORE_ENGINE_V1.2.4
       </div>
     </div>
   )

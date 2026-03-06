@@ -49,6 +49,20 @@ export function classifyIncidents(agents: Agent[], egoId: string): Incident[] {
     }
   }
 
+  if (traj.length > 0) {
+    const duration = traj[traj.length - 1].t - traj[0].t
+    const interval = 8.0
+    for (let t = interval; t < duration; t += interval) {
+      const point = traj.find(p => p.t >= t) || traj[traj.length - 1]
+      const hasNearbyIncident = incidents.some(inc => Math.abs(inc.timestamp - point.t) < 2.0)
+      
+      if (!hasNearbyIncident) {
+        incidents.push(makeIncident('routine_update', point, incidentCount++,
+          'Routine status update: Normal driving conditions.', 'low'))
+      }
+    }
+  }
+
   return deduplicateIncidents(incidents)
 }
 

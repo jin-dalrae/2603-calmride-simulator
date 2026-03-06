@@ -171,22 +171,31 @@ Click **Play** on the Voice channel card to hear the explanation spoken aloud vi
 
 ## Layout
 
+The UI uses a cinematic 4-column layout designed for real-time monitoring and AI deliberation tracking:
+
 ```
-+------------------+-----------------------------+
-|                  |                             |
-|   Sidebar        |     Three.js Bird's-Eye     |
-|   (300px)        |     (OrthographicCamera)    |
-|                  |                             |
-|  - Scenario      +-----------------------------+
-|    Picker        |     Timeline Bar            |
-|  - Personality   +-----------------------------+
-|  - Tone Sliders  |  Front  | Rear  | App |Voice|
-|  - System Prompt |  Screen | Screen| Push| TTS |
-|  - Regenerate    |         |       |     |     |
-|  - Data          |         |       |     |     |
-|    Accumulator   |         |       |     |     |
-+------------------+-----------------------------+
++---------+-----------+-----------+-----------+
+|         |           |           |           |
+| Sidebar | Three.js  | Telemetry | Ensemble  |
+| (280px) | View      | Stream    | Chat      |
+|         |           | (280px)   | (Resizable)|
+|         |           |           |           |
++---------+-----------+-----------+-----------+
+|         | Timeline  |           |           |
++---------+-----------+-----------+-----------+
+|         | Channels (Front/Rear/App/Voice)    |
++---------+-----------------------------------+
 ```
+
+---
+
+## Aesthetic: Waymo World Model
+
+The simulation and UI are inspired by the **Waymo World Model** aesthetic (as seen in Waymo's 2026 frontiers research):
+- **Cinematic Rendering**: 3D perspective with realistic lighting, shadows, and environment mapping.
+- **High-Fidelity Telemetry**: Real-time smoothing and interpolation of agent data for 60fps monitoring.
+- **Dark Mode Terminal**: Monospace typography and high-contrast technical indicators (cyan, amber, emerald).
+- **Agent Intelligence**: A dedicated deliberation panel where the AI ensemble debates the best communication strategy before broadcasting.
 
 ---
 

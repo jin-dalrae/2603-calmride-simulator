@@ -14,8 +14,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # --- Waymo Open Motion Dataset ---
-BASE_DIR = Path(__file__).parent
-WOMD_DATA_DIR = Path(os.getenv("WOMD_DATA_DIR", BASE_DIR / "data" / "womd"))
+WOMD_DATA_DIR = Path(os.getenv("WOMD_DATA_DIR", "./data/womd"))
 WOMD_VERSION = os.getenv("WOMD_VERSION", "1.2.1")
 
 # --- Server ---

@@ -4,27 +4,26 @@ import type { MapFeature } from '../../types/scenario'
 
 // Values taken from Waymax visualization/color.py
 const ROAD_COLORS: Record<string, string> = {
-  'LaneCenter-Freeway': '#e6e6e6',
-  'LaneCenter-SurfaceStreet': '#e6e6e6',
-  'LaneCenter-BikeLane': '#e6e6e6',
-  'RoadLine-BrokenSingleWhite': '#8ce6ff',
-  'RoadLine-SolidSingleWhite': '#59dbff',
-  'RoadLine-SolidDoubleWhite': '#59dbff',
-  'RoadLine-BrokenSingleYellow': '#f199ff',
-  'RoadLine-BrokenDoubleYellow': '#f199ff',
-  'RoadLine-SolidSingleYellow': '#787878',
-  'RoadLine-SolidDoubleYellow': '#787878',
-  'RoadLine-PassingDoubleYellow': '#787878',
-  'RoadEdgeBoundary': '#505050',
-  'RoadEdgeMedian': '#505050',
-  'StopSign': '#ff0000',
-  'Crosswalk': '#c8c8c8',
-  'SpeedBump': '#c8c8c8',
-  // Fallbacks
-  'lane_boundary': '#475569',
-  'lane_center': '#e6e6e6',
-  'road_edge': '#505050',
-  'crosswalk': '#c8c8c8',
+  'LaneCenter-Freeway': '#334155',
+  'LaneCenter-SurfaceStreet': '#334155',
+  'LaneCenter-BikeLane': '#334155',
+  'RoadLine-BrokenSingleWhite': '#64748b',
+  'RoadLine-SolidSingleWhite': '#94a3b8',
+  'RoadLine-SolidDoubleWhite': '#94a3b8',
+  'RoadLine-BrokenSingleYellow': '#f59e0b',
+  'RoadLine-BrokenDoubleYellow': '#f59e0b',
+  'RoadLine-SolidSingleYellow': '#b45309',
+  'RoadLine-SolidDoubleYellow': '#b45309',
+  'RoadLine-PassingDoubleYellow': '#b45309',
+  'RoadEdgeBoundary': '#1e293b',
+  'RoadEdgeMedian': '#1e293b',
+  'StopSign': '#ef4444',
+  'Crosswalk': '#475569',
+  'SpeedBump': '#475569',
+  'lane_boundary': '#334155',
+  'lane_center': '#1e293b',
+  'road_edge': '#0f172a',
+  'crosswalk': '#334155',
 }
 
 interface Props {
@@ -36,10 +35,9 @@ export function RoadMap({ features }: Props) {
     return features
       .filter(f => f.points.length >= 2)
       .map((feature, i) => {
-        const points = feature.points.map(p => [p.x, 0.05, -p.y] as [number, number, number])
-        const color = ROAD_COLORS[feature.type] || '#475569'
+        const points = feature.points.map(p => [p.x, 0.02, -p.y] as [number, number, number])
+        const color = ROAD_COLORS[feature.type] || '#334155'
 
-        // Define line properties based on type
         const isCenter = feature.type.includes('LaneCenter')
         const isBoundary = feature.type.includes('RoadLine') || feature.type.includes('RoadEdge')
         const isDashed = feature.type.includes('Broken')
@@ -48,10 +46,10 @@ export function RoadMap({ features }: Props) {
           points,
           color,
           key: `map-${feature.type}-${i}`,
-          lineWidth: isCenter ? 0.8 : isBoundary ? 1.2 : 1.5,
+          lineWidth: isCenter ? 1 : isBoundary ? 2 : 3,
           dashed: isDashed,
-          opacity: isCenter ? 0.3 : 0.8,
-          transparent: isCenter
+          opacity: isCenter ? 0.2 : 0.6,
+          transparent: true
         }
       })
   }, [features])
@@ -67,8 +65,8 @@ export function RoadMap({ features }: Props) {
           transparent={feat.transparent}
           opacity={feat.opacity}
           dashed={feat.dashed}
-          dashSize={feat.dashed ? 1 : undefined}
-          gapSize={feat.dashed ? 0.5 : undefined}
+          dashSize={feat.dashed ? 0.8 : undefined}
+          gapSize={feat.dashed ? 0.4 : undefined}
         />
       ))}
     </group>

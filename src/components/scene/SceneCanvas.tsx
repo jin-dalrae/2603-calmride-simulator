@@ -1,5 +1,5 @@
 import { Canvas } from '@react-three/fiber'
-import { MapControls } from '@react-three/drei'
+import { MapControls, Sky, Environment, ContactShadows, Float } from '@react-three/drei'
 import { EgoVehicle } from './EgoVehicle'
 import { SurroundingAgent } from './SurroundingAgent'
 import { RoadMap } from './RoadMap'
@@ -8,22 +8,46 @@ import { IncidentMarker } from './IncidentMarker'
 import { TrafficSignals } from './TrafficSignals'
 import { useScenarioStore } from '../../store/useScenarioStore'
 import { usePlaybackStore } from '../../store/usePlaybackStore'
+import * as THREE from 'three'
 
 export function SceneCanvas() {
   const scenario = useScenarioStore(s => s.currentScenario)
   const currentTime = usePlaybackStore(s => s.currentTime)
 
   return (
-    <div style={{ width: '100%', height: '100%', background: '#1a1a2e' }}>
-      <Canvas orthographic camera={{ zoom: 4, position: [0, 0, 100], near: 0.1, far: 1000 }}>
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[50, 50, 50]} intensity={0.8} />
+    <div style={{ width: '100%', height: '100%', background: '#050505' }}>
+      <Canvas 
+        shadows 
+        camera={{ position: [20, 20, 20], fov: 40, near: 1, far: 2000 }}
+        onCreated={({ gl }) => {
+          gl.toneMapping = THREE.ACESFilmicToneMapping
+          gl.outputColorSpace = THREE.SRGBColorSpace
+        }}
+      >
+        <color attach="background" args={['#050505']} />
+        <fog attach="fog" args={['#050505', 10, 500]} />
+        
+        <Sky sunPosition={[100, 20, 100]} />
+        <Environment preset="city" />
+        
+        <ambientLight intensity={0.2} />
+        <directionalLight 
+          position={[100, 100, 50]} 
+          intensity={1.5} 
+          castShadow 
+          shadow-mapSize={[2048, 2048]}
+          shadow-camera-left={-100}
+          shadow-camera-right={100}
+          shadow-camera-top={100}
+          shadow-camera-bottom={-100}
+        />
 
-        {/* Ground plane */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
-          <planeGeometry args={[500, 500]} />
-          <meshStandardMaterial color="#1e293b" />
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
+          <planeGeometry args={[2000, 2000]} />
+          <meshStandardMaterial color="#0a0a0a" roughness={0.8} metalness={0.2} />
         </mesh>
+        
+        <gridHelper args={[2000, 100, '#222', '#111']} position={[0, 0.01, 0]} />
 
         {scenario && (
           <>
@@ -50,7 +74,11 @@ export function SceneCanvas() {
           </>
         )}
 
-        <MapControls enableRotate={false} />
+        <MapControls 
+          enableDamping 
+          dampingFactor={0.05}
+          maxPolarAngle={Math.PI / 2.1} 
+        />
       </Canvas>
     </div>
   )

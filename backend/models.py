@@ -44,9 +44,14 @@ class QAPairModel(BaseModel):
 
 # ---------- Incident ----------
 IncidentType = Literal[
-    "hard_brake", "sudden_stop", "lane_change",
-    "near_miss", "erratic_movement",
-    "offroad", "wrong_way",  # New from Waymax metrics
+    "hard_brake",
+    "sudden_stop",
+    "lane_change",
+    "near_miss",
+    "erratic_movement",
+    "offroad",
+    "wrong_way",
+    "routine_update",
 ]
 
 
@@ -62,14 +67,28 @@ class IncidentModel(BaseModel):
 
 # ---------- Map ----------
 MapFeatureType = Literal[
-    "LaneCenter-Freeway", "LaneCenter-SurfaceStreet", "LaneCenter-BikeLane",
-    "RoadLine-BrokenSingleWhite", "RoadLine-SolidSingleWhite", "RoadLine-SolidDoubleWhite",
-    "RoadLine-BrokenSingleYellow", "RoadLine-BrokenDoubleYellow",
-    "RoadLine-SolidSingleYellow", "RoadLine-SolidDoubleYellow", "RoadLine-PassingDoubleYellow",
-    "RoadEdgeBoundary", "RoadEdgeMedian",
-    "StopSign", "Crosswalk", "SpeedBump",
-    "lane_boundary", "crosswalk", "stop_sign", "speed_bump", # Fallback
-    "lane_center", "road_edge", # Fallback
+    "LaneCenter-Freeway",
+    "LaneCenter-SurfaceStreet",
+    "LaneCenter-BikeLane",
+    "RoadLine-BrokenSingleWhite",
+    "RoadLine-SolidSingleWhite",
+    "RoadLine-SolidDoubleWhite",
+    "RoadLine-BrokenSingleYellow",
+    "RoadLine-BrokenDoubleYellow",
+    "RoadLine-SolidSingleYellow",
+    "RoadLine-SolidDoubleYellow",
+    "RoadLine-PassingDoubleYellow",
+    "RoadEdgeBoundary",
+    "RoadEdgeMedian",
+    "StopSign",
+    "Crosswalk",
+    "SpeedBump",
+    "lane_boundary",
+    "crosswalk",
+    "stop_sign",
+    "speed_bump",  # Fallback
+    "lane_center",
+    "road_edge",  # Fallback
 ]
 
 
@@ -90,17 +109,19 @@ class TrafficSignalModel(BaseModel):
 # ---------- Waymax Metrics ----------
 class WaymaxMetricsModel(BaseModel):
     """Per-scenario metric results computed by Waymax."""
-    overlap: bool = False         # Any bounding-box overlap with other agents
-    offroad: bool = False         # Vehicle leaves driveable area
-    wrong_way: bool = False       # Vehicle driving against traffic direction
+
+    overlap: bool = False  # Any bounding-box overlap with other agents
+    offroad: bool = False  # Vehicle leaves driveable area
+    wrong_way: bool = False  # Vehicle driving against traffic direction
     kinematic_infeasible: bool = False  # Violates vehicle dynamics constraints
-    log_divergence: float = 0.0   # MSE from logged trajectory
+    log_divergence: float = 0.0  # MSE from logged trajectory
     route_following: bool = True  # Following the intended route
 
 
 # ---------- Full Scenario ----------
 class ScenarioSummaryModel(BaseModel):
     """Lightweight scenario info for the scenario list."""
+
     id: str
     agent_count: int
     duration: float
@@ -111,6 +132,7 @@ class ScenarioSummaryModel(BaseModel):
 
 class ParsedScenarioModel(BaseModel):
     """Full scenario data for the detail view."""
+
     id: str
     ego_id: str
     duration: float

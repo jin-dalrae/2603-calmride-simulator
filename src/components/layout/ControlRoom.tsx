@@ -9,38 +9,71 @@ export function ControlRoom() {
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: '300px 1fr 300px 350px',
+      gridTemplateColumns: '280px 1fr auto',
       gridTemplateRows: '1fr auto auto',
       width: '100vw',
       height: '100vh',
-      background: '#111827',
+      background: '#050505',
+      color: '#e5e7eb',
+      overflow: 'hidden'
     }}>
-      {/* Sidebar spans all rows, col 1 */}
-      <div style={{ gridRow: '1 / -1', gridColumn: '1' }}>
+      {/* Left Sidebar */}
+      <div style={{ gridRow: '1 / -1', gridColumn: '1', borderRight: '1px solid #111' }}>
         <Sidebar />
       </div>
 
-      {/* Main scene area, col 2 */}
-      <div style={{ minHeight: 0, gridColumn: '2' }}>
-        <SceneCanvas />
+      {/* Main View Area */}
+      <div style={{ 
+        gridColumn: '2', 
+        display: 'flex', 
+        flexDirection: 'column',
+        minWidth: 0,
+        position: 'relative'
+      }}>
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <SceneCanvas />
+        </div>
+        
+        <div style={{ position: 'absolute', bottom: 140, left: 20, right: 20, zIndex: 10 }}>
+          <TimelineBar />
+        </div>
+
+        <div style={{ height: 120, borderTop: '1px solid #111', background: 'rgba(5,5,5,0.8)', backdropFilter: 'blur(10px)' }}>
+          <ChannelStrip />
+        </div>
       </div>
 
-      {/* Timeline bar, col 2 */}
-      <div style={{ gridColumn: '2' }}>
-        <TimelineBar />
-      </div>
-
-      {/* Channel strip, col 2 */}
-      <div style={{ gridColumn: '2' }}>
-        <ChannelStrip />
-      </div>
-
-      <div style={{ gridRow: '1 / -1', gridColumn: '3' }}>
-        <DataStreamPanel />
-      </div>
-
-      <div style={{ gridRow: '1 / -1', gridColumn: '4' }}>
-        <AgentChatPanel />
+      {/* Right Intelligence Panel (Resizable) */}
+      <div style={{ 
+        gridRow: '1 / -1', 
+        gridColumn: '3',
+        display: 'flex',
+        borderLeft: '1px solid #111',
+        background: '#080808'
+      }}>
+        <div style={{ 
+          width: 280, 
+          borderRight: '1px solid #111',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <DataStreamPanel />
+        </div>
+        
+        <div style={{ 
+          minWidth: 350,
+          maxWidth: 600,
+          width: '30vw',
+          resize: 'horizontal',
+          overflow: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          direction: 'rtl' // Hack to put resize handle on the left
+        }}>
+          <div style={{ direction: 'ltr', flex: 1, display: 'flex', flexDirection: 'column' }}>
+             <AgentChatPanel />
+          </div>
+        </div>
       </div>
     </div>
   )

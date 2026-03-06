@@ -16,9 +16,9 @@ export function SurroundingAgent({ agent, time }: Props) {
   const color = AGENT_HEX[agent.type] || '#666666'
 
   const dim: [number, number, number] = [
-    agent.width || (agent.type === 'pedestrian' ? 0.6 : 2.0),
-    agent.height || (agent.type === 'pedestrian' ? 1.8 : 1.4),
-    agent.length || (agent.type === 'pedestrian' ? 0.6 : 4.0)
+    agent.width || (agent.type === 'pedestrian' ? 0.6 : 1.8),
+    agent.height || (agent.type === 'pedestrian' ? 1.7 : 1.4),
+    agent.length || (agent.type === 'pedestrian' ? 0.6 : 4.5)
   ]
 
   useFrame(() => {
@@ -35,37 +35,44 @@ export function SurroundingAgent({ agent, time }: Props) {
 
   return (
     <group ref={groupRef}>
-      {/* Main Body */}
-      <mesh position={[0, dim[1] / 2, 0]}>
+      <mesh position={[0, dim[1] / 2 + 0.1, 0]} castShadow receiveShadow>
         {agent.type === 'pedestrian' ? (
-          <capsuleGeometry args={[dim[0] / 2, dim[1] - dim[0], 4, 8]} />
+          <capsuleGeometry args={[dim[0] / 2, dim[1] - dim[0], 4, 16]} />
         ) : (
           <boxGeometry args={dim} />
         )}
         <meshStandardMaterial
           color={color}
-          transparent
-          opacity={0.8}
-          roughness={0.4}
+          roughness={0.2}
+          metalness={0.5}
+          envMapIntensity={0.5}
         />
       </mesh>
 
-      {/* Heading Indicator for vehicles/cyclists */}
       {(agent.type === 'vehicle' || agent.type === 'cyclist') && (
-        <mesh position={[0, dim[1] * 0.7, dim[2] / 2]}>
-          <boxGeometry args={[dim[0] * 0.8, 0.1, 0.2]} />
-          <meshStandardMaterial color="#ffffff" emissive="#ffffff" />
-        </mesh>
+        <>
+          <mesh position={[0, dim[1] + 0.05, 0.4]} scale={[dim[0] - 0.1, 0.3, dim[2] * 0.3]}>
+            <boxGeometry />
+            <meshStandardMaterial color="#111" />
+          </mesh>
+          
+          <mesh position={[dim[0]/2 - 0.2, 0.5, dim[2]/2]} scale={[0.3, 0.2, 0.1]}>
+            <boxGeometry />
+            <meshStandardMaterial color="#fff" emissive="#fff" emissiveIntensity={2} />
+          </mesh>
+          <mesh position={[-dim[0]/2 + 0.2, 0.5, dim[2]/2]} scale={[0.3, 0.2, 0.1]}>
+            <boxGeometry />
+            <meshStandardMaterial color="#fff" emissive="#fff" emissiveIntensity={2} />
+          </mesh>
+        </>
       )}
 
-      {/* Label for visibility */}
       <Text
-        position={[0, dim[1] + 0.5, 0]}
-        fontSize={0.6}
-        color={color}
+        position={[0, dim[1] + 1.2, 0]}
+        fontSize={0.4}
+        color="white"
         anchorX="center"
-        anchorY="middle"
-        rotation={[Math.PI / 2, Math.PI, 0]} // View from top
+        rotation={[Math.PI / 2, Math.PI, 0]}
       >
         {agent.type.toUpperCase()}
       </Text>
