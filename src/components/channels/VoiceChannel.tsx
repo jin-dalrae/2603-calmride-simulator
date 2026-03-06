@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useExplanationStore } from '../../store/useExplanationStore'
 
-const toneColors = { calm: '#22c55e', informative: '#3b82f6', urgent: '#ef4444' }
+const toneColors = { calm: '#4ade80', informative: '#38bdf8', urgent: '#f87171' }
 
 export function VoiceChannel() {
   const content = useExplanationStore(s => s.current?.voice)
@@ -27,56 +27,74 @@ export function VoiceChannel() {
 
   return (
     <div style={cardStyle}>
-      <div style={headerStyle}>Voice</div>
+      <div style={headerStyle}>
+        <span>VOICE_COMMS_LINK</span>
+        <span style={{ color: consensusReached ? '#4ade80' : '#444' }}>●</span>
+      </div>
       {loading ? (
-        <div style={loadingStyle}>Generating...</div>
+        <div style={loadingStyle}>[SYNTHESIZING_VOICE...]</div>
       ) : content && consensusReached ? (
-        <div style={{ padding: 12 }}>
+        <div style={{ padding: '20px 16px' }}>
           <div style={{
-            background: '#374151', borderRadius: 12, padding: 12,
-            position: 'relative',
+            background: '#0a0a0a', borderRadius: '4px', padding: '12px',
+            position: 'relative', border: '1px solid #111'
           }}>
-            {/* Speech bubble */}
-            <p style={{ fontSize: 13, color: '#d1d5db', lineHeight: 1.5, margin: 0, fontStyle: 'italic' }}>
+            <p style={{ fontSize: 13, color: '#ccc', lineHeight: 1.6, margin: 0, fontStyle: 'italic' }}>
               "{content.text}"
             </p>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-              <span style={{ fontSize: 10, color: toneColors[content.tone], textTransform: 'uppercase' }}>
-                {content.tone}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
+              <span style={{ fontSize: '9px', color: toneColors[content.tone], textTransform: 'uppercase', fontWeight: 800, letterSpacing: 1, fontFamily: 'monospace' }}>
+                TONE: {content.tone}
               </span>
               <button
                 onClick={speaking ? stop : speak}
                 style={{
-                  background: speaking ? '#ef4444' : '#3b82f6',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 6,
+                  background: speaking ? 'rgba(248, 113, 113, 0.1)' : 'rgba(56, 189, 248, 0.1)',
+                  color: speaking ? '#f87171' : '#38bdf8',
+                  border: `1px solid ${speaking ? '#f87171' : '#38bdf8'}`,
+                  borderRadius: '2px',
                   padding: '4px 12px',
-                  fontSize: 12,
+                  fontSize: '10px',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
                   cursor: 'pointer',
+                  fontFamily: 'monospace'
                 }}
               >
-                {speaking ? 'Stop' : 'Play'}
+                {speaking ? 'TERMINATE' : 'BROADCAST'}
               </button>
             </div>
           </div>
         </div>
       ) : content && !consensusReached ? (
-        <div style={loadingStyle}>Awaiting final consensus...</div>
+        <div style={loadingStyle}>[AWAITING_REASONING...]</div>
       ) : (
-        <div style={emptyStyle}>Waiting for incident...</div>
+        <div style={emptyStyle}>AUDIO_LINK_OFFLINE</div>
       )}
     </div>
   )
 }
 
 const cardStyle: React.CSSProperties = {
-  background: '#1f2937', borderRadius: 8, overflow: 'hidden', display: 'flex', flexDirection: 'column',
-  border: '1px solid #374151',
+  background: '#080808', 
+  borderRadius: '4px', 
+  overflow: 'hidden', 
+  display: 'flex', 
+  flexDirection: 'column',
+  border: '1px solid #111',
 }
 const headerStyle: React.CSSProperties = {
-  padding: '6px 12px', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1,
-  color: '#9ca3af', borderBottom: '1px solid #374151', background: '#111827',
+  padding: '12px 14px', 
+  fontSize: '10px', 
+  fontWeight: 700,
+  textTransform: 'uppercase', 
+  letterSpacing: '1.5px',
+  color: '#666', 
+  borderBottom: '1px solid #111', 
+  background: '#0a0a0a',
+  display: 'flex',
+  justifyContent: 'space-between',
+  fontFamily: 'monospace'
 }
-const loadingStyle: React.CSSProperties = { padding: 16, color: '#6b7280', fontSize: 13, textAlign: 'center' }
-const emptyStyle: React.CSSProperties = { padding: 16, color: '#4b5563', fontSize: 12, textAlign: 'center' }
+const loadingStyle: React.CSSProperties = { padding: 24, color: '#333', fontSize: 11, textAlign: 'center', fontFamily: 'monospace' }
+const emptyStyle: React.CSSProperties = { padding: 24, color: '#222', fontSize: 10, textAlign: 'center', fontFamily: 'monospace' }

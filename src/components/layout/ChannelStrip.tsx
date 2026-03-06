@@ -8,10 +8,10 @@ export function ChannelStrip() {
     <div style={{
       display: 'grid',
       gridTemplateColumns: 'repeat(4, 1fr)',
-      gap: 8,
-      padding: 8,
-      background: '#111827',
-      minHeight: 160,
+      gap: 12,
+      padding: 12,
+      background: '#050505',
+      minHeight: 180,
     }}>
       <FrontScreen />
       <RearScreen />

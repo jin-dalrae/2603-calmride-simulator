@@ -18,14 +18,18 @@ export function TimelineBar() {
 
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px',
-      background: '#1f2937', borderTop: '1px solid #374151',
+      display: 'flex', alignItems: 'center', gap: 16, padding: '12px 20px',
+      background: 'rgba(8, 8, 8, 0.9)', 
+      backdropFilter: 'blur(20px)',
+      border: '1px solid #111',
+      borderRadius: '8px',
+      boxShadow: '0 4px 24px rgba(0,0,0,0.5)'
     }}>
       <button onClick={togglePlay} style={btnStyle}>
-        {isPlaying ? '⏸' : '▶'}
+        {isPlaying ? '󰏦' : '󰐊'}
       </button>
 
-      <div style={{ flex: 1, position: 'relative' }}>
+      <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
         <input
           type="range"
           min={0}
@@ -33,50 +37,88 @@ export function TimelineBar() {
           step={0.01}
           value={currentTime}
           onChange={e => seek(parseFloat(e.target.value))}
-          style={{ width: '100%', accentColor: '#3b82f6' }}
+          className="timeline-slider"
+          style={{ 
+            width: '100%', 
+            cursor: 'pointer',
+            height: '4px',
+            borderRadius: '2px',
+            appearance: 'none',
+            background: '#111'
+          }}
         />
-        {/* Incident markers on timeline */}
         {incidents.map(inc => (
           <div
             key={inc.id}
             style={{
               position: 'absolute',
               left: `${(inc.timestamp / duration) * 100}%`,
-              top: -2,
+              top: '50%',
               width: 6, height: 6,
               borderRadius: '50%',
-              background: '#ef4444',
-              transform: 'translateX(-3px)',
+              background: inc.severity === 'high' ? '#f87171' : '#fbbf24',
+              transform: 'translate(-3px, -3px)',
               pointerEvents: 'none',
+              boxShadow: `0 0 10px ${inc.severity === 'high' ? '#f87171' : '#fbbf24'}`
             }}
           />
         ))}
       </div>
 
-      <span style={{ fontVariantNumeric: 'tabular-nums', fontSize: 13, color: '#9ca3af', minWidth: 80, textAlign: 'center' }}>
-        {currentTime.toFixed(1)}s / {duration.toFixed(1)}s
+      <span style={{ 
+        fontFamily: 'monospace', 
+        fontSize: '11px', 
+        color: '#34d399', 
+        minWidth: 90, 
+        textAlign: 'right',
+        letterSpacing: '1px'
+      }}>
+        {currentTime.toFixed(2)}s / {duration.toFixed(2)}s
       </span>
 
-      <select
-        value={speed}
-        onChange={e => setSpeed(parseFloat(e.target.value))}
-        style={{ background: '#374151', color: '#e5e7eb', border: '1px solid #4b5563', borderRadius: 4, padding: '2px 6px', fontSize: 13 }}
-      >
-        {speeds.map(s => (
-          <option key={s} value={s}>{s}x</option>
+      <div style={{ display: 'flex', gap: 4 }}>
+        {[0.5, 1, 2].map(s => (
+            <button 
+                key={s} 
+                onClick={() => setSpeed(s)}
+                style={{
+                    background: speed === s ? '#222' : 'transparent',
+                    color: speed === s ? '#38bdf8' : '#444',
+                    border: 'none',
+                    fontSize: '10px',
+                    fontWeight: 800,
+                    fontFamily: 'monospace',
+                    padding: '4px 8px',
+                    cursor: 'pointer',
+                    borderRadius: '2px'
+                }}
+            >
+                {s}X
+            </button>
         ))}
-      </select>
+      </div>
+
+      <style>{`
+        .timeline-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #38bdf8;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #38bdf8;
+        }
+      `}</style>
     </div>
   )
 }
 
 const btnStyle: React.CSSProperties = {
-  background: '#3b82f6',
-  color: 'white',
-  border: 'none',
-  borderRadius: 6,
-  width: 36, height: 36,
-  fontSize: 16,
+  background: 'transparent',
+  color: '#38bdf8',
+  border: '1px solid #38bdf8',
+  borderRadius: '4px',
+  width: 32, height: 32,
+  fontSize: 14,
   cursor: 'pointer',
   display: 'flex',
   alignItems: 'center',

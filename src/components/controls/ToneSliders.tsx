@@ -10,13 +10,13 @@ export function ToneSliders() {
   const { tone, setTone } = usePromptStore()
 
   return (
-    <div style={{ padding: '0 12px' }}>
-      <label style={labelStyle}>Tone Settings</label>
+    <div style={{ padding: '0 16px' }}>
+      <label style={labelStyle}>Tone_Parameters</label>
       {sliders.map(({ key, label }) => (
-        <div key={key} style={{ marginBottom: 10 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-            <span style={{ fontSize: 12, color: '#9ca3af' }}>{label}</span>
-            <span style={{ fontSize: 12, color: '#6b7280' }}>{tone[key]}</span>
+        <div key={key} style={{ marginBottom: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+            <span style={{ fontSize: '10px', color: '#888', fontWeight: 600, fontFamily: 'monospace' }}>{label.toUpperCase()}</span>
+            <span style={{ fontSize: '10px', color: '#34d399', fontFamily: 'monospace' }}>{tone[key]}%</span>
           </div>
           <input
             type="range"
@@ -24,15 +24,25 @@ export function ToneSliders() {
             max={100}
             value={tone[key]}
             onChange={e => setTone({ [key]: parseInt(e.target.value) })}
-            style={{ width: '100%', accentColor: '#3b82f6' }}
+            className="tone-slider"
+            style={{ width: '100%', accentColor: '#38bdf8', height: '2px', background: '#111', appearance: 'none' }}
           />
         </div>
       ))}
+      <style>{`
+        .tone-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 10px;
+            height: 10px;
+            background: #38bdf8;
+            border-radius: 2px;
+        }
+      `}</style>
     </div>
   )
 }
 
 const labelStyle: React.CSSProperties = {
-  fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: '#6b7280',
-  display: 'block', marginBottom: 8,
+  fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#444',
+  display: 'block', marginBottom: 12, fontWeight: 800, fontFamily: 'monospace'
 }

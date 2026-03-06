@@ -31,16 +31,16 @@ Researchers who want to test how different communication strategies (tone, techn
 - Severity-based filtering: Only medium/high incidents or scheduled updates trigger full deliberations.
 
 ### 4. Multi-Channel Interface
-- **Front Screen**: High-impact tablet view for facts.
-- **Rear Screen**: Large-format comfort/reassurance view.
-- **App Notification**: Mobile-optimized concise alerts.
-- **Voice TTS**: Natural language spoken updates.
+- **Front Screen**: High-impact terminal view for factual updates.
+- **Rear Screen**: Large-format comfort/reassurance view with high-fidelity status indicators.
+- **App Notification**: Mobile-optimized alerts with priority-coded visual headers.
+- **Voice TTS**: Natural language spoken updates with tone-specific synthesis.
 
 ### 5. Control Suite
-- Scenario selection (WOMD vs. Synthetic).
-- Personality selector (Professional, Friendly, Minimal, etc.).
-- Real-time tone adjustment sliders.
-- Direct system prompt editing for rapid prototyping.
+- **Scenario Source**: Waymo TFRecord research data vs. synthetic matrices.
+- **AI personality Kernel**: Grid-based selection of LLM reasoning profiles.
+- **Tone Parameters**: Real-time control of anxiety acknowledgment, technical depth, and verbosity.
+- **System Instruction Set**: Direct override of AI behavior via system prompt injection.
 
 ## Aesthetics & UI
 - **Primary Color Palette**: Deep blacks (#050505), Slate grays, and high-contrast indicators (Sky Blue, Emerald, Amber).

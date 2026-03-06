@@ -24,16 +24,16 @@ You control the AI's communication style in real-time using tone sliders (anxiet
 ## Tech Stack
 
 ### Frontend
-- **Vite + React + TypeScript** — frontend framework
-- **Three.js** (React Three Fiber + drei) — 3D bird's-eye scene
-- **Zustand** — state management
-- **Google Gemini API** (`@google/generative-ai`) — explanation generation with structured JSON output
-- **Browser SpeechSynthesis API** — voice channel TTS
+- **Vite + React + TypeScript** — modern web stack
+- **Three.js (React Three Fiber + drei)** — Waymo World Model cinematic renderer
+- **Zustand** — global state orchestration
+- **Google Gemini 2.0 Flash** — LLM-driven ensemble deliberation
+- **Web Speech API** — synthesized voice communications
 
-### Backend (Waymax Integration)
-- **FastAPI** — Python REST API serving scenario data
-- **Waymax** (JAX) — Waymo's simulator for loading real WOMD scenarios and computing research-grade metrics
-- **JAX** — High-performance numerical computing (CPU or GPU)
+### Backend (Waymax Engine)
+- **FastAPI** — research-data gateway
+- **Waymax (JAX)** — high-fidelity simulation and metrics computation
+- **TensorFlow** — TFRecord parsing and data loading
 
 The backend is **optional** — the frontend works standalone with local sample scenarios. When the backend is running, it adds:
 - **Real WOMD scenarios** loaded via `waymax.dataloader` (103K+ segments)

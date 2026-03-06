@@ -1,6 +1,6 @@
 import { useExplanationStore } from '../../store/useExplanationStore'
 
-const iconMap = { info: 'ℹ️', warning: '⚠️', safety: '🛡️', route: '🗺️' }
+const iconMap = { info: '󰋽', warning: '󰀦', safety: '󰈙', route: '󰈙' }
 
 export function RearScreen() {
   const content = useExplanationStore(s => s.current?.rearScreen)
@@ -9,33 +9,50 @@ export function RearScreen() {
 
   return (
     <div style={cardStyle}>
-      <div style={headerStyle}>Rear Screen</div>
+      <div style={headerStyle}>
+        <span>REAR_DISPLAY_UNIT</span>
+        <span style={{ color: consensusReached ? '#4ade80' : '#444' }}>●</span>
+      </div>
       {loading ? (
-        <div style={loadingStyle}>Generating...</div>
+        <div style={loadingStyle}>[STREAMING_METRICS...]</div>
       ) : content && consensusReached ? (
-        <div style={{ padding: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <span style={{ fontSize: 24 }}>{iconMap[content.icon]}</span>
-            <span style={{ fontSize: 18, fontWeight: 600, color: '#f3f4f6' }}>{content.headline}</span>
+        <div style={{ padding: '20px 16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', borderLeft: '3px solid #4ade80', paddingLeft: 10 }}>
+                {content.headline.toUpperCase()}
+            </div>
+            <p style={{ fontSize: 15, color: '#ccc', lineHeight: 1.6, margin: 0 }}>{content.comfortNote}</p>
           </div>
-          <p style={{ fontSize: 15, color: '#d1d5db', lineHeight: 1.6, margin: 0 }}>{content.comfortNote}</p>
         </div>
       ) : content && !consensusReached ? (
-        <div style={loadingStyle}>Awaiting final consensus...</div>
+        <div style={loadingStyle}>[PROCESSING_REASSURANCE_MAP...]</div>
       ) : (
-        <div style={emptyStyle}>Waiting for incident...</div>
+        <div style={emptyStyle}>NO_SIGNAL: STANDBY</div>
       )}
     </div>
   )
 }
 
 const cardStyle: React.CSSProperties = {
-  background: '#1f2937', borderRadius: 8, overflow: 'hidden', display: 'flex', flexDirection: 'column',
-  border: '1px solid #374151',
+  background: '#080808', 
+  borderRadius: '4px', 
+  overflow: 'hidden', 
+  display: 'flex', 
+  flexDirection: 'column',
+  border: '1px solid #111',
 }
 const headerStyle: React.CSSProperties = {
-  padding: '6px 12px', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1,
-  color: '#9ca3af', borderBottom: '1px solid #374151', background: '#111827',
+  padding: '12px 14px', 
+  fontSize: '10px', 
+  fontWeight: 700,
+  textTransform: 'uppercase', 
+  letterSpacing: '1.5px',
+  color: '#666', 
+  borderBottom: '1px solid #111', 
+  background: '#0a0a0a',
+  display: 'flex',
+  justifyContent: 'space-between',
+  fontFamily: 'monospace'
 }
-const loadingStyle: React.CSSProperties = { padding: 16, color: '#6b7280', fontSize: 13, textAlign: 'center' }
-const emptyStyle: React.CSSProperties = { padding: 16, color: '#4b5563', fontSize: 12, textAlign: 'center' }
+const loadingStyle: React.CSSProperties = { padding: 24, color: '#333', fontSize: 11, textAlign: 'center', fontFamily: 'monospace' }
+const emptyStyle: React.CSSProperties = { padding: 24, color: '#222', fontSize: 10, textAlign: 'center', fontFamily: 'monospace' }
