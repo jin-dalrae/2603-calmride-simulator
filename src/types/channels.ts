@@ -22,7 +22,13 @@ export interface VoiceContent {
   tone: 'calm' | 'informative' | 'urgent'
 }
 
+export interface AgentMessage {
+  speaker: 'Operational' | 'Comfort' | 'Minimalist' | 'Concierge' | 'Technical'
+  text: string
+}
+
 export interface ChannelExplanation {
+  agentConversation: AgentMessage[]
   frontScreen: FrontScreenContent
   rearScreen: RearScreenContent
   appNotification: AppNotificationContent

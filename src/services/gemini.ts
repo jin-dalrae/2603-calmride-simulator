@@ -6,6 +6,17 @@ import type { Personality, PromptConfig } from '../types/prompt'
 const RESPONSE_SCHEMA = {
   type: 'object' as const,
   properties: {
+    agentConversation: {
+      type: 'array' as const,
+      items: {
+        type: 'object' as const,
+        properties: {
+          speaker: { type: 'string' as const, enum: ['Operational', 'Comfort', 'Minimalist', 'Concierge', 'Technical'] },
+          text: { type: 'string' as const },
+        },
+        required: ['speaker', 'text'],
+      },
+    },
     frontScreen: {
       type: 'object' as const,
       properties: {
@@ -43,7 +54,7 @@ const RESPONSE_SCHEMA = {
       required: ['text', 'tone'],
     },
   },
-  required: ['frontScreen', 'rearScreen', 'appNotification', 'voice'],
+  required: ['agentConversation', 'frontScreen', 'rearScreen', 'appNotification', 'voice'],
 }
 
 function buildSystemPrompt(config: PromptConfig): string {
@@ -75,7 +86,8 @@ Tone parameters (0=low, 100=high):
 - Technical depth: ${config.tone.technicalDepth}/100
 - Verbosity: ${config.tone.verbosity}/100
 
-Assign each agent to generate the content for the channel best suited to their persona. Return a JSON object with content for all 4 channels.`
+FIRST, generate a transcript of the ENSEMBLE AGENTS having a conversation with each other in the "agentConversation" array. They must debate and discuss the incident, what happened, and what the best approach is to communicate with the passenger. They should act like a team in a control room. Let them talk for 3-5 messages.
+THEN, assign each agent to generate the finalized content for the channel best suited to their persona. Return a JSON object with the conversation and the content for all 4 channels.`
 }
 
 function buildUserMessage(
@@ -142,6 +154,10 @@ export async function generateExplanation(
 function getFallbackExplanation(incident: Incident): ChannelExplanation {
   const typeLabel = incident.type.replace(/_/g, ' ')
   return {
+    agentConversation: [
+      { speaker: 'Technical', text: 'Sensors detect a fallback situation. API key is missing or invalid.' },
+      { speaker: 'Operational', text: 'Agreed. Deploying standard generic fallback responses.' },
+    ],
     frontScreen: {
       headline: `${typeLabel.charAt(0).toUpperCase() + typeLabel.slice(1)} Detected`,
       body: incident.description,
