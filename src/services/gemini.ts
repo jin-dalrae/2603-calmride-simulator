@@ -87,6 +87,9 @@ Tone parameters (0=low, 100=high):
 - Verbosity: ${config.tone.verbosity}/100
 
 FIRST, generate a transcript of the ENSEMBLE AGENTS having a conversation with each other in the "agentConversation" array. They must debate and discuss the incident, what happened, and what the best approach is to communicate with the passenger. They should act like a team in a control room. Let them talk for 3-5 messages.
+
+IMPORTANT: If the incident severity is "medium" or "low" (e.g. routine lane change, smooth deceleration), the agents MUST remain calm, professional, and brief. They should only show urgency for "high" severity incidents. If no safety threat exists, treat it as a routine operational state.
+
 THEN, assign each agent to generate the finalized content for the channel best suited to their persona. Return a JSON object with the conversation and the content for all 4 channels.`
 }
 
@@ -153,30 +156,31 @@ export async function generateExplanation(
 
 function getFallbackExplanation(incident: Incident): ChannelExplanation {
   const typeLabel = incident.type.replace(/_/g, ' ')
+  const isHigh = incident.severity === 'high'
   return {
     agentConversation: [
-      { speaker: 'Technical', text: 'Sensors detect a fallback situation. API key is missing or invalid.' },
-      { speaker: 'Operational', text: 'Agreed. Deploying standard generic fallback responses.' },
+      { speaker: 'Technical', text: isHigh ? 'Critical telemetry anomaly detected.' : 'Routine maneuver recorded in logs.' },
+      { speaker: 'Operational', text: isHigh ? 'Acknowledged. Prioritizing safety explanation.' : 'Agreed. Minor update for the passenger.' },
     ],
     frontScreen: {
-      headline: `${typeLabel.charAt(0).toUpperCase() + typeLabel.slice(1)} Detected`,
+      headline: isHigh ? `${typeLabel.charAt(0).toUpperCase() + typeLabel.slice(1)}` : 'Standard Maneuver',
       body: incident.description,
-      icon: incident.severity === 'high' ? 'warning' : 'info',
-      etaImpact: incident.severity === 'high' ? 'May add 1-2 minutes' : undefined,
+      icon: isHigh ? 'warning' : 'info',
+      etaImpact: isHigh ? 'May add 1-2 minutes' : undefined,
     },
     rearScreen: {
-      headline: `Safety Maneuver`,
-      comfortNote: 'The vehicle is responding to road conditions. We\'ll resume normal driving shortly.',
+      headline: isHigh ? 'Safety Maneuver' : 'Smooth Transit',
+      comfortNote: isHigh ? 'The vehicle is responding to road conditions.' : 'We are adjusting our position for a smoother ride.',
       icon: 'safety',
     },
     appNotification: {
-      title: `CalmRide: ${typeLabel}`,
-      body: `Your vehicle detected a ${typeLabel}. ${incident.description}`,
-      priority: incident.severity === 'high' ? 'high' : 'medium',
+      title: `CalmRide: ${isHigh ? 'Safety Alert' : 'Update'}`,
+      body: isHigh ? `Detected ${typeLabel}. ${incident.description}` : `Performing a routine ${typeLabel}.`,
+      priority: isHigh ? 'high' : 'low',
     },
     voice: {
-      text: `I'm making a ${typeLabel} maneuver. ${incident.description}. Everything is under control.`,
-      tone: incident.severity === 'high' ? 'urgent' : 'calm',
+      text: isHigh ? `I'm making a safety maneuver. ${incident.description}.` : `Just a routine ${typeLabel} for a better route.`,
+      tone: isHigh ? 'urgent' : 'calm',
     },
   }
 }

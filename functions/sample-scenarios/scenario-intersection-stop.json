@@ -1,0 +1,119 @@
+{
+  "sid": "scenario-intersection-stop",
+  "ego": "ego",
+  "cur_time": 0,
+  "future_time": 9,
+  "env_q": [
+    "What is the road structure at the current location?",
+    "Are there any traffic signals or signs?"
+  ],
+  "env_a": [
+    "The ego vehicle is approaching a four-way intersection with two lanes in each direction. There are crosswalks on all four sides of the intersection.",
+    "There is a traffic light at the intersection currently showing green for the ego vehicle's direction of travel. There is also a pedestrian crossing signal."
+  ],
+  "ego_q": [
+    "What is the ego vehicle's current motion status?",
+    "What action does the ego vehicle take?"
+  ],
+  "ego_a": [
+    "The ego vehicle is traveling straight at approximately 10 m/s (22 mph) approaching the intersection.",
+    "The ego vehicle performs a hard brake and comes to a sudden stop to yield to a pedestrian who has entered the crosswalk against the signal."
+  ],
+  "sur_q": [
+    "What are the surrounding agents near the ego vehicle?",
+    "What is the pedestrian doing?"
+  ],
+  "sur_a": [
+    "There is a pedestrian crossing the road from the right side approximately 15 meters ahead. There is also a vehicle in the adjacent lane traveling in the same direction.",
+    "The pedestrian appears to be jaywalking, crossing against the pedestrian signal. They are walking at approximately 1.5 m/s from right to left across the ego vehicle's path."
+  ],
+  "int_q": [
+    "How does the ego vehicle interact with the pedestrian?",
+    "Is there any risk of collision?"
+  ],
+  "int_a": [
+    "The ego vehicle detects the pedestrian entering the crosswalk and initiates emergency braking to avoid a collision. The vehicle decelerates from 10 m/s to 0 m/s in approximately 1.5 seconds.",
+    "The ego vehicle successfully stops approximately 3 meters before the pedestrian's path. There was a near-miss situation but the autonomous driving system responded appropriately with a safety margin."
+  ],
+  "agents": [
+    {
+      "id": "ego",
+      "type": "vehicle",
+      "trajectory": [
+        {"t": 0, "x": 0, "y": 0, "heading": 0, "vx": 10, "vy": 0},
+        {"t": 0.5, "x": 5, "y": 0, "heading": 0, "vx": 10, "vy": 0},
+        {"t": 1.0, "x": 10, "y": 0, "heading": 0, "vx": 10, "vy": 0},
+        {"t": 1.5, "x": 15, "y": 0, "heading": 0, "vx": 10, "vy": 0},
+        {"t": 2.0, "x": 20, "y": 0, "heading": 0, "vx": 10, "vy": 0},
+        {"t": 2.5, "x": 25, "y": 0, "heading": 0, "vx": 10, "vy": 0},
+        {"t": 3.0, "x": 30, "y": 0, "heading": 0, "vx": 10, "vy": 0},
+        {"t": 3.5, "x": 34, "y": 0, "heading": 0, "vx": 7, "vy": 0},
+        {"t": 4.0, "x": 36, "y": 0, "heading": 0, "vx": 3, "vy": 0},
+        {"t": 4.5, "x": 37, "y": 0, "heading": 0, "vx": 0.5, "vy": 0},
+        {"t": 5.0, "x": 37, "y": 0, "heading": 0, "vx": 0, "vy": 0},
+        {"t": 5.5, "x": 37, "y": 0, "heading": 0, "vx": 0, "vy": 0},
+        {"t": 6.0, "x": 37, "y": 0, "heading": 0, "vx": 0, "vy": 0},
+        {"t": 6.5, "x": 37, "y": 0, "heading": 0, "vx": 0, "vy": 0},
+        {"t": 7.0, "x": 37, "y": 0, "heading": 0, "vx": 0, "vy": 0},
+        {"t": 7.5, "x": 37.5, "y": 0, "heading": 0, "vx": 2, "vy": 0},
+        {"t": 8.0, "x": 39, "y": 0, "heading": 0, "vx": 5, "vy": 0},
+        {"t": 8.5, "x": 42, "y": 0, "heading": 0, "vx": 7, "vy": 0},
+        {"t": 9.0, "x": 46, "y": 0, "heading": 0, "vx": 9, "vy": 0}
+      ]
+    },
+    {
+      "id": "ped-1",
+      "type": "pedestrian",
+      "trajectory": [
+        {"t": 0, "x": 40, "y": -20, "heading": 1.57, "vx": 0, "vy": 1.5},
+        {"t": 1.0, "x": 40, "y": -18.5, "heading": 1.57, "vx": 0, "vy": 1.5},
+        {"t": 2.0, "x": 40, "y": -17, "heading": 1.57, "vx": 0, "vy": 1.5},
+        {"t": 3.0, "x": 40, "y": -15, "heading": 1.57, "vx": 0, "vy": 1.5},
+        {"t": 4.0, "x": 40, "y": -10, "heading": 1.57, "vx": 0, "vy": 1.5},
+        {"t": 5.0, "x": 40, "y": -5, "heading": 1.57, "vx": 0, "vy": 1.5},
+        {"t": 6.0, "x": 40, "y": 0, "heading": 1.57, "vx": 0, "vy": 1.5},
+        {"t": 7.0, "x": 40, "y": 5, "heading": 1.57, "vx": 0, "vy": 1.5},
+        {"t": 8.0, "x": 40, "y": 10, "heading": 1.57, "vx": 0, "vy": 1.5},
+        {"t": 9.0, "x": 40, "y": 15, "heading": 1.57, "vx": 0, "vy": 1.5}
+      ]
+    },
+    {
+      "id": "vehicle-1",
+      "type": "vehicle",
+      "trajectory": [
+        {"t": 0, "x": -2, "y": -4, "heading": 0, "vx": 9, "vy": 0},
+        {"t": 1.0, "x": 7, "y": -4, "heading": 0, "vx": 9, "vy": 0},
+        {"t": 2.0, "x": 16, "y": -4, "heading": 0, "vx": 9, "vy": 0},
+        {"t": 3.0, "x": 25, "y": -4, "heading": 0, "vx": 9, "vy": 0},
+        {"t": 4.0, "x": 34, "y": -4, "heading": 0, "vx": 9, "vy": 0},
+        {"t": 5.0, "x": 43, "y": -4, "heading": 0, "vx": 9, "vy": 0},
+        {"t": 6.0, "x": 52, "y": -4, "heading": 0, "vx": 9, "vy": 0},
+        {"t": 7.0, "x": 61, "y": -4, "heading": 0, "vx": 9, "vy": 0},
+        {"t": 8.0, "x": 70, "y": -4, "heading": 0, "vx": 9, "vy": 0},
+        {"t": 9.0, "x": 79, "y": -4, "heading": 0, "vx": 9, "vy": 0}
+      ]
+    }
+  ],
+  "map_features": [
+    {
+      "type": "lane_boundary",
+      "polyline": [{"x": -20, "y": -2}, {"x": 100, "y": -2}]
+    },
+    {
+      "type": "lane_boundary",
+      "polyline": [{"x": -20, "y": 2}, {"x": 100, "y": 2}]
+    },
+    {
+      "type": "lane_boundary",
+      "polyline": [{"x": -20, "y": -6}, {"x": 100, "y": -6}]
+    },
+    {
+      "type": "crosswalk",
+      "polyline": [{"x": 38, "y": -8}, {"x": 38, "y": 8}]
+    },
+    {
+      "type": "crosswalk",
+      "polyline": [{"x": 42, "y": -8}, {"x": 42, "y": 8}]
+    }
+  ]
+}

@@ -3,12 +3,13 @@ import { ChannelStrip } from './ChannelStrip'
 import { SceneCanvas } from '../scene/SceneCanvas'
 import { TimelineBar } from '../timeline/TimelineBar'
 import { AgentChatPanel } from '../channels/AgentChatPanel'
+import { DataStreamPanel } from '../channels/DataStreamPanel'
 
 export function ControlRoom() {
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: '300px 1fr 350px',
+      gridTemplateColumns: '300px 1fr 300px 350px',
       gridTemplateRows: '1fr auto auto',
       width: '100vw',
       height: '100vh',
@@ -34,8 +35,11 @@ export function ControlRoom() {
         <ChannelStrip />
       </div>
 
-      {/* Agent Chat Panel, col 3, spans all rows */}
       <div style={{ gridRow: '1 / -1', gridColumn: '3' }}>
+        <DataStreamPanel />
+      </div>
+
+      <div style={{ gridRow: '1 / -1', gridColumn: '4' }}>
         <AgentChatPanel />
       </div>
     </div>

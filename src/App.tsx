@@ -20,7 +20,9 @@ export default function App() {
   const { triggerExplanation } = useGeminiExplanation()
 
   const onIncident = useCallback((incident: Incident) => {
-    triggerExplanation(incident)
+    if (incident.severity !== 'low') {
+      triggerExplanation(incident)
+    }
   }, [triggerExplanation])
 
   useIncidentDetection(onIncident)

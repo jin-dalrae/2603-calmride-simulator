@@ -117,14 +117,14 @@ function generateEgoTrajectory(
   for (let i = 0; i <= steps; i++) {
     const t = startTime + i * dt
 
-    if (hasStop && i > stopTime && i < stopTime + 15) {
-      speed = Math.max(0, speed - 1.5)
-    } else if (hasStop && i >= stopTime + 15 && i < stopTime + 30) {
-      speed = Math.min(10, speed + 0.5)
+    if (hasStop && i > stopTime && i < stopTime + 25) {
+      speed = Math.max(0, speed - 0.4)
+    } else if (hasStop && i >= stopTime + 25 && i < stopTime + 50) {
+      speed = Math.min(10, speed + 0.2)
     }
 
-    if (hasTurn && i > turnTime && i < turnTime + 10) {
-      heading += 0.03
+    if (hasTurn && i > turnTime && i < turnTime + 15) {
+      heading += 0.015
     }
 
     const accel = i > 0 ? (speed - (trajectory[i - 1]?.speed || speed)) / dt : 0

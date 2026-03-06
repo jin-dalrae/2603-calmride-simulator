@@ -1,1 +1,15 @@
-firebase_functions~=0.1.0
+# CalmRide Backend - Waymax Integration (Firebase Functions)
+fastapi==0.115.6
+pydantic==2.10.4
+firebase-functions~=0.1.0
+
+# Waymax + JAX (CPU-only by default)
+jax[cpu]
+waymo-waymax @ git+https://github.com/waymo-research/waymax.git@main
+
+# Data processing
+numpy>=1.24.0
+tensorflow>=2.15.0  # Required by waymax for TFRecord loading
+
+# CORS
+python-dotenv==1.0.1

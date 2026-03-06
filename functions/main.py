@@ -1,21 +1,110 @@
-# Welcome to Cloud Functions for Firebase for Python!
-# To get started, simply uncomment the below code or create your own.
-# Deploy with `firebase deploy`
+"""
+CalmRide Backend — Firebase Functions Entry Point
+"""
 
+from __future__ import annotations
+
+import logging
+import os
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from firebase_functions import https_fn
 from firebase_functions.options import set_global_options
-from firebase_admin import initialize_app
+from firebase_admin import initialize_app as initialize_firebase
 
-# For cost control, you can set the maximum number of containers that can be
-# running at the same time. This helps mitigate the impact of unexpected
-# traffic spikes by instead downgrading performance. This limit is a per-function
-# limit. You can override the limit for each function using the max_instances
-# parameter in the decorator, e.g. @https_fn.on_request(max_instances=5).
-set_global_options(max_instances=10)
+# Memory and Scale configuration for Waymax
+set_global_options(max_instances=10, memory=2048)
 
-# initialize_app()
-#
-#
-# @https_fn.on_request()
-# def on_request_example(req: https_fn.Request) -> https_fn.Response:
-#     return https_fn.Response("Hello world!")
+from config import CORS_ORIGINS
+from models import ParsedScenarioModel, ScenarioSummaryModel
+from services.data_loader import initialize, list_scenarios, get_scenario
+from services.metrics_service import _WAYMAX_METRICS_AVAILABLE
+
+# Initialize Firebase Admin
+initialize_firebase()
+
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Load Data at startup
+# ---------------------------------------------------------------------------
+initialize()
+logger.info("🚗 CalmRide Backend initialized with data")
+
+# ---------------------------------------------------------------------------
+# FastAPI App
+# ---------------------------------------------------------------------------
+app = FastAPI(
+    title="CalmRide Backend",
+    description="Waymax-powered scenario data API for the CalmRide Simulator",
+    version="1.0.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Allow all for simplicity in deployment, adjust as needed
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
+@app.get("/")
+async def root():
+    return {
+        "service": "CalmRide Backend",
+        "version": "1.0.0",
+        "waymax_available": _WAYMAX_METRICS_AVAILABLE,
+    }
+
+@app.get("/api/health")
+async def health():
+    scenarios = list_scenarios()
+    return {
+        "status": "ok",
+        "scenario_count": len(scenarios),
+        "waymax_metrics_available": _WAYMAX_METRICS_AVAILABLE,
+    }
+
+@app.get("/api/scenarios", response_model=list[ScenarioSummaryModel])
+async def get_scenarios():
+    """List all available scenarios."""
+    return list_scenarios()
+
+@app.get("/api/scenarios/{scenario_id}", response_model=ParsedScenarioModel)
+async def get_scenario_detail(scenario_id: str):
+    """Get full scenario data by ID."""
+    scenario = get_scenario(scenario_id)
+    if not scenario:
+        raise HTTPException(status_code=404, detail=f"Scenario '{scenario_id}' not found")
+    return scenario
+
+@app.get("/api/scenarios/{scenario_id}/metrics")
+async def get_scenario_metrics(scenario_id: str):
+    """Get Waymax-computed metrics for a scenario."""
+    scenario = get_scenario(scenario_id)
+    if not scenario:
+        raise HTTPException(status_code=404, detail=f"Scenario '{scenario_id}' not found")
+
+    return {
+        "scenario_id": scenario_id,
+        "waymax_metrics": scenario.waymax_metrics,
+        "waymax_available": _WAYMAX_METRICS_AVAILABLE,
+    }
+
+# ---------------------------------------------------------------------------
+# Firebase Cloud Function wrapper
+# ---------------------------------------------------------------------------
+@https_fn.on_request()
+def api(req: https_fn.Request) -> https_fn.Response:
+    """Entry point for Firebase Functions to handle HTTP requests."""
+    return https_fn.asgi_handler(app)(req)

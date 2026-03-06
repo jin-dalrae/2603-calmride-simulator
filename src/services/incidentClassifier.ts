@@ -1,9 +1,9 @@
 import type { Agent, Incident, IncidentType, TrajectoryPoint } from '../types/scenario'
 
-const HARD_BRAKE_THRESHOLD = 6 // m/s²
-const HEADING_CHANGE_THRESHOLD = 0.26 // ~15 degrees
-const STOP_SPEED_THRESHOLD = 0.5 // m/s
-const MIN_SPEED_FOR_BRAKE = 3 // m/s
+const HARD_BRAKE_THRESHOLD = 8.5
+const HEADING_CHANGE_THRESHOLD = 0.45
+const STOP_SPEED_THRESHOLD = 0.5
+const MIN_SPEED_FOR_BRAKE = 4
 
 export function classifyIncidents(agents: Agent[], egoId: string): Incident[] {
   const ego = agents.find(a => a.id === egoId)

@@ -14,15 +14,19 @@ import json
 import logging
 import math
 from pathlib import Path
-from typing import Optional
+from typing import Optional, cast, Any
 
 from models import (
     AgentModel,
+    AgentType,
     MapFeatureModel,
+    MapFeatureType,
     ParsedScenarioModel,
+    QACategory,
     QAPairModel,
     ScenarioSummaryModel,
     TrajectoryPointModel,
+    TrafficSignalModel,
 )
 from config import WOMD_DATA_DIR, MAX_SCENARIOS, MAX_AGENTS_PER_SCENARIO
 
@@ -36,6 +40,7 @@ try:
     from waymax import config as waymax_config
     from waymax import dataloader as waymax_dataloader
     from waymax import datatypes as waymax_datatypes
+
     _WAYMAX_AVAILABLE = True
     logger.info("✅ Waymax loaded successfully")
 except ImportError:
@@ -57,6 +62,7 @@ SAMPLE_DIR = Path(__file__).resolve().parent.parent / "public" / "sample-scenari
 # ===========================================================================
 # Public API
 # ===========================================================================
+
 
 def initialize() -> None:
     """Build the scenario index at startup."""
@@ -97,6 +103,7 @@ def get_scenario(scenario_id: str) -> Optional[ParsedScenarioModel]:
 # ===========================================================================
 # Local sample scenarios (fallback)
 # ===========================================================================
+
 
 def _load_sample_scenarios() -> None:
     """Load JSON sample scenarios from public/sample-scenarios/."""
@@ -139,12 +146,14 @@ def _parse_sample_json(raw: dict, fallback_id: str) -> ParsedScenarioModel:
         questions = raw.get(q_key, [])
         answers = raw.get(a_key, [])
         for i, q in enumerate(questions):
-            qa_pairs.append(QAPairModel(
-                category=category,
-                question=q,
-                answer=answers[i] if i < len(answers) else "",
-                timestamp=cur_time,
-            ))
+            qa_pairs.append(
+                QAPairModel(
+                    category=cast(QACategory, category),
+                    question=q,
+                    answer=answers[i] if i < len(answers) else "",
+                    timestamp=cur_time,
+                )
+            )
 
     # Parse agents (real or synthetic)
     agents: list[AgentModel] = []
@@ -152,20 +161,25 @@ def _parse_sample_json(raw: dict, fallback_id: str) -> ParsedScenarioModel:
         for a in raw["agents"][:MAX_AGENTS_PER_SCENARIO]:
             trajectory = [
                 TrajectoryPointModel(
-                    t=p["t"], x=p["x"], y=p["y"],
+                    t=p["t"],
+                    x=p["x"],
+                    y=p["y"],
                     heading=p.get("heading", 0),
-                    speed=math.sqrt(p.get("vx", 0)**2 + p.get("vy", 0)**2),
+                    speed=math.sqrt(p.get("vx", 0) ** 2 + p.get("vy", 0) ** 2),
                     accel=0.0,
                 )
                 for p in a.get("trajectory", [])
             ]
-            agents.append(AgentModel(
-                id=a["id"], type=a["type"], 
-                length=a.get("length", 4.5 if a["type"] == "vehicle" else 0.6),
-                width=a.get("width", 2.0 if a["type"] == "vehicle" else 0.6),
-                height=a.get("height", 1.5 if a["type"] == "vehicle" else 1.8),
-                trajectory=trajectory
-            ))
+            agents.append(
+                AgentModel(
+                    id=a["id"],
+                    type=a["type"],
+                    length=a.get("length", 4.5 if a["type"] == "vehicle" else 0.6),
+                    width=a.get("width", 2.0 if a["type"] == "vehicle" else 0.6),
+                    height=a.get("height", 1.5 if a["type"] == "vehicle" else 1.8),
+                    trajectory=trajectory,
+                )
+            )
     else:
         agents = _generate_synthetic_agents(raw, duration, cur_time)
 
@@ -190,14 +204,22 @@ def _parse_sample_json(raw: dict, fallback_id: str) -> ParsedScenarioModel:
     )
 
 
-def _generate_synthetic_agents(raw: dict, duration: float, cur_time: float) -> list[AgentModel]:
+def _generate_synthetic_agents(
+    raw: dict, duration: float, cur_time: float
+) -> list[AgentModel]:
     """Generate synthetic agents from Q&A text (mirrors frontend scenarioParser.ts)."""
     num_steps = 90
     dt = duration / num_steps
 
     ego_answers = raw.get("ego_a", [])
-    has_stop = any("stop" in a.lower() or "brake" in a.lower() or "yield" in a.lower() for a in ego_answers)
-    has_turn = any("turn" in a.lower() or "lane change" in a.lower() or "swerve" in a.lower() for a in ego_answers)
+    has_stop = any(
+        "stop" in a.lower() or "brake" in a.lower() or "yield" in a.lower()
+        for a in ego_answers
+    )
+    has_turn = any(
+        "turn" in a.lower() or "lane change" in a.lower() or "swerve" in a.lower()
+        for a in ego_answers
+    )
 
     # Ego trajectory
     ego_traj: list[TrajectoryPointModel] = []
@@ -219,9 +241,17 @@ def _generate_synthetic_agents(raw: dict, duration: float, cur_time: float) -> l
 
         x += math.cos(heading) * speed * dt
         y += math.sin(heading) * speed * dt
-        ego_traj.append(TrajectoryPointModel(t=t, x=x, y=y, heading=heading, speed=speed, accel=accel))
+        ego_traj.append(
+            TrajectoryPointModel(
+                t=t, x=x, y=y, heading=heading, speed=speed, accel=accel
+            )
+        )
 
-    agents = [AgentModel(id="ego", type="ego", length=4.5, width=2.0, height=1.5, trajectory=ego_traj)]
+    agents = [
+        AgentModel(
+            id="ego", type="ego", length=4.5, width=2.0, height=1.5, trajectory=ego_traj
+        )
+    ]
 
     # Surrounding agents
     sur_answers = raw.get("sur_a", [])
@@ -233,7 +263,13 @@ def _generate_synthetic_agents(raw: dict, duration: float, cur_time: float) -> l
 
         offset_x = (1 if idx % 2 == 0 else -1) * (8 + idx * 4)
         offset_y = (1 if idx < 2 else -1) * (5 + idx * 3)
-        agent_speed = 1.5 if agent_type == "pedestrian" else 5.0 if agent_type == "cyclist" else 8.0
+        agent_speed = (
+            1.5
+            if agent_type == "pedestrian"
+            else 5.0
+            if agent_type == "cyclist"
+            else 8.0
+        )
         agent_heading = math.atan2(-offset_y, 1)
 
         traj: list[TrajectoryPointModel] = []
@@ -241,16 +277,22 @@ def _generate_synthetic_agents(raw: dict, duration: float, cur_time: float) -> l
             t = cur_time + i * dt
             ax = offset_x + math.cos(agent_heading) * agent_speed * i * dt
             ay = offset_y + math.sin(agent_heading) * agent_speed * i * dt
-            traj.append(TrajectoryPointModel(t=t, x=ax, y=ay, heading=agent_heading, speed=agent_speed, accel=0))
+            traj.append(
+                TrajectoryPointModel(
+                    t=t, x=ax, y=ay, heading=agent_heading, speed=agent_speed, accel=0
+                )
+            )
 
-        agents.append(AgentModel(
-            id=f"agent-{idx + 1}", 
-            type=agent_type, 
-            length=1.0 if is_ped else 2.0 if is_cyclist else 4.0,
-            width=1.0 if is_ped else 0.8 if is_cyclist else 1.8,
-            height=1.8 if is_ped else 1.5 if is_cyclist else 1.4,
-            trajectory=traj
-        ))
+        agents.append(
+            AgentModel(
+                id=f"agent-{idx + 1}",
+                type=agent_type,
+                length=1.0 if is_ped else 2.0 if is_cyclist else 4.0,
+                width=1.0 if is_ped else 0.8 if is_cyclist else 1.8,
+                height=1.8 if is_ped else 1.5 if is_cyclist else 1.4,
+                trajectory=traj,
+            )
+        )
 
     return agents
 
@@ -259,6 +301,7 @@ def _generate_synthetic_agents(raw: dict, duration: float, cur_time: float) -> l
 # Waymax-powered loading (when available)
 # ===========================================================================
 
+
 def _load_waymax_scenarios() -> None:
     """Index scenarios from WOMD via waymax.dataloader."""
     if not _WAYMAX_AVAILABLE:
@@ -266,18 +309,19 @@ def _load_waymax_scenarios() -> None:
 
     try:
         import glob
+
         pattern = f"{WOMD_DATA_DIR}/*.tfrecord*"
         files = glob.glob(pattern)
         logger.info(f"🔍 Found {len(files)} tfrecord files in {WOMD_DATA_DIR}: {files}")
-        
+
         # Use first file directly if exactly one found, otherwise fallback to glob
         target_path = files[0] if len(files) == 1 else pattern
-        
-        wod_config = waymax_config.DatasetConfig(
+
+        wod_config = waymax_config.DatasetConfig(  # type: ignore
             path=target_path,
             max_num_objects=MAX_AGENTS_PER_SCENARIO,
         )
-        scenarios = waymax_dataloader.simulator_state_generator(wod_config)
+        scenarios = waymax_dataloader.simulator_state_generator(wod_config)  # type: ignore
 
         count = 0
         for state in scenarios:
@@ -308,13 +352,19 @@ def _load_single_waymax_scenario(scenario_id: str) -> Optional[ParsedScenarioMod
         return None
 
     try:
+        import glob
+
+        pattern = f"{WOMD_DATA_DIR}/*.tfrecord*"
+        files = glob.glob(pattern)
+        target_path = files[0] if len(files) == 1 else pattern
+
         # Re-iterate to find the scenario (in production, use an index/offset)
         idx = int(scenario_id.split("-")[1])
-        wod_config = waymax_config.DatasetConfig(
-            path=str(WOMD_DATA_DIR / "*.tfrecord*"),
+        wod_config = waymax_config.DatasetConfig(  # type: ignore
+            path=target_path,
             max_num_objects=MAX_AGENTS_PER_SCENARIO,
         )
-        scenarios = waymax_dataloader.simulator_state_generator(wod_config)
+        scenarios = waymax_dataloader.simulator_state_generator(wod_config)  # type: ignore
 
         for i, state in enumerate(scenarios):
             if i == idx:
@@ -345,16 +395,17 @@ def _convert_waymax_state(state, scenario_id: str) -> ParsedScenarioModel:
 
         # Determine agent type
         # Waymo SDC is indicated in object_metadata.sda_idx
-        is_ego = (obj_idx == state.object_metadata.sda_index)
+        is_ego = bool(state.object_metadata.is_sdc[obj_idx])
         obj_type = state.object_metadata.object_types[obj_idx]
         # Waymax type mapping: 1=vehicle, 2=pedestrian, 3=cyclist
         type_map = {1: "vehicle", 2: "pedestrian", 3: "cyclist"}
         agent_type = "ego" if is_ego else type_map.get(int(obj_type), "vehicle")
 
-        # Dimensions from metadata
-        length = float(state.object_metadata.length[obj_idx])
-        width = float(state.object_metadata.width[obj_idx])
-        height = float(state.object_metadata.height[obj_idx])
+        # Dimensions from trajectory
+        first_valid_idx = int(valid_mask.argmax())
+        length = float(state.log_trajectory.length[obj_idx, first_valid_idx])
+        width = float(state.log_trajectory.width[obj_idx, first_valid_idx])
+        height = float(state.log_trajectory.height[obj_idx, first_valid_idx])
 
         # Skip invalid or tiny objects
         if length < 0.1 or width < 0.1:
@@ -368,8 +419,16 @@ def _convert_waymax_state(state, scenario_id: str) -> ParsedScenarioModel:
             x = float(log_traj.x[obj_idx, t_idx])
             y = float(log_traj.y[obj_idx, t_idx])
             heading = float(log_traj.yaw[obj_idx, t_idx])
-            vx = float(log_traj.vel_x[obj_idx, t_idx]) if hasattr(log_traj, 'vel_x') else 0
-            vy = float(log_traj.vel_y[obj_idx, t_idx]) if hasattr(log_traj, 'vel_y') else 0
+            vx = (
+                float(log_traj.vel_x[obj_idx, t_idx])
+                if hasattr(log_traj, "vel_x")
+                else 0
+            )
+            vy = (
+                float(log_traj.vel_y[obj_idx, t_idx])
+                if hasattr(log_traj, "vel_y")
+                else 0
+            )
             speed = math.sqrt(vx**2 + vy**2)
 
             # Compute acceleration from speed delta
@@ -379,23 +438,28 @@ def _convert_waymax_state(state, scenario_id: str) -> ParsedScenarioModel:
             else:
                 accel = 0.0
 
-            trajectory.append(TrajectoryPointModel(
-                t=t_idx * dt,
-                x=x, y=y,
-                heading=heading,
-                speed=speed,
-                accel=accel,
-            ))
+            trajectory.append(
+                TrajectoryPointModel(
+                    t=t_idx * dt,
+                    x=x,
+                    y=y,
+                    heading=heading,
+                    speed=speed,
+                    accel=accel,
+                )
+            )
 
         if trajectory:
-            agents.append(AgentModel(
-                id="ego" if is_ego else f"agent-{obj_idx}",
-                type=agent_type,
-                length=length,
-                width=width,
-                height=height,
-                trajectory=trajectory,
-            ))
+            agents.append(
+                AgentModel(
+                    id="ego" if is_ego else f"agent-{obj_idx}",
+                    type=cast(AgentType, agent_type),
+                    length=length,
+                    width=width,
+                    height=height,
+                    trajectory=trajectory,
+                )
+            )
 
     # Extract road graph as map features
     map_features = _extract_waymax_map_features(state)
@@ -469,10 +533,16 @@ def _extract_waymax_map_features(state) -> list[MapFeatureModel]:
             # Better subsampling: keep more detail for road lines
             limit = 400 if "RoadLine" in feature_name else 200
             step = max(1, len(xs) // limit)
-            points = [{"x": float(xs[i]), "y": float(ys[i])} for i in range(0, len(xs), step)]
+            points = [
+                {"x": float(xs[i]), "y": float(ys[i])} for i in range(0, len(xs), step)
+            ]
 
             if points:
-                features.append(MapFeatureModel(type=feature_name, points=points))
+                features.append(
+                    MapFeatureModel(
+                        type=cast(MapFeatureType, feature_name), points=points
+                    )
+                )
 
     except Exception as e:
         logger.warning(f"Could not extract map features: {e}")
@@ -484,9 +554,9 @@ def _extract_waymax_traffic_lights(state) -> list[TrafficSignalModel]:
     """Extract traffic light states from Waymax state."""
     signals = []
     try:
-        if not hasattr(state, 'log_traffic_light'):
+        if not hasattr(state, "log_traffic_light"):
             return []
-            
+
         tl = state.log_traffic_light
         # Shape: (num_signals, num_timesteps)
         num_signals = tl.state.shape[0]
@@ -497,20 +567,22 @@ def _extract_waymax_traffic_lights(state) -> list[TrafficSignalModel]:
             valid_mask = tl.valid[s_idx]
             if not valid_mask.any():
                 continue
-                
+
             # For simplicity, we sample the states at their timestamps
             for t_idx in range(num_timesteps):
                 if valid_mask[t_idx]:
-                    signals.append(TrafficSignalModel(
-                        id=f"tl-{s_idx}",
-                        x=float(tl.x[s_idx, t_idx]),
-                        y=float(tl.y[s_idx, t_idx]),
-                        state=int(tl.state[s_idx, t_idx]),
-                        timestamp=t_idx * dt
-                    ))
+                    signals.append(
+                        TrafficSignalModel(
+                            id=f"tl-{s_idx}",
+                            x=float(tl.x[s_idx, t_idx]),
+                            y=float(tl.y[s_idx, t_idx]),
+                            state=int(tl.state[s_idx, t_idx]),
+                            timestamp=t_idx * dt,
+                        )
+                    )
     except Exception as e:
         logger.warning(f"Could not extract traffic lights: {e}")
-        
+
     return signals
 
 
@@ -520,13 +592,15 @@ def _extract_waymax_traffic_lights(state) -> list[TrafficSignalModel]:
 
 from models import IncidentModel
 
-HARD_BRAKE_THRESHOLD = 6.0    # m/s²
-HEADING_CHANGE_THRESHOLD = 0.26  # ~15 degrees
-STOP_SPEED_THRESHOLD = 0.5   # m/s
-MIN_SPEED_FOR_BRAKE = 3.0    # m/s
+HARD_BRAKE_THRESHOLD = 8.5
+HEADING_CHANGE_THRESHOLD = 0.45
+STOP_SPEED_THRESHOLD = 0.5
+MIN_SPEED_FOR_BRAKE = 4.0
 
 
-def _classify_incidents_simple(agents: list[AgentModel], ego_id: str) -> list[IncidentModel]:
+def _classify_incidents_simple(
+    agents: list[AgentModel], ego_id: str
+) -> list[IncidentModel]:
     """Threshold-based incident classification (matches frontend logic)."""
     ego = next((a for a in agents if a.id == ego_id), None)
     if not ego:
@@ -547,12 +621,17 @@ def _classify_incidents_simple(agents: list[AgentModel], ego_id: str) -> list[In
 
         # Hard brake
         if decel > HARD_BRAKE_THRESHOLD and prev.speed > MIN_SPEED_FOR_BRAKE:
-            incidents.append(IncidentModel(
-                id=f"incident-{count}", type="hard_brake",
-                timestamp=curr.t, x=curr.x, y=curr.y,
-                description=f"Hard braking detected: deceleration {decel:.1f} m/s²",
-                severity="high",
-            ))
+            incidents.append(
+                IncidentModel(
+                    id=f"incident-{count}",
+                    type="hard_brake",
+                    timestamp=curr.t,
+                    x=curr.x,
+                    y=curr.y,
+                    description=f"Hard braking detected: deceleration {decel:.1f} m/s²",
+                    severity="high",
+                )
+            )
             count += 1
 
         # Sudden stop
@@ -562,12 +641,17 @@ def _classify_incidents_simple(agents: list[AgentModel], ego_id: str) -> list[In
                 for inc in incidents
             )
             if not has_brake:
-                incidents.append(IncidentModel(
-                    id=f"incident-{count}", type="sudden_stop",
-                    timestamp=curr.t, x=curr.x, y=curr.y,
-                    description=f"Sudden stop from {prev.speed:.1f} m/s",
-                    severity="high",
-                ))
+                incidents.append(
+                    IncidentModel(
+                        id=f"incident-{count}",
+                        type="sudden_stop",
+                        timestamp=curr.t,
+                        x=curr.x,
+                        y=curr.y,
+                        description=f"Sudden stop from {prev.speed:.1f} m/s",
+                        severity="high",
+                    )
+                )
                 count += 1
 
         # Lane change
@@ -575,12 +659,17 @@ def _classify_incidents_simple(agents: list[AgentModel], ego_id: str) -> list[In
             prev_prev = traj[i - 2]
             heading_delta = abs(_normalize_angle(curr.heading - prev_prev.heading))
             if heading_delta > HEADING_CHANGE_THRESHOLD and curr.speed > 2:
-                incidents.append(IncidentModel(
-                    id=f"incident-{count}", type="lane_change",
-                    timestamp=curr.t, x=curr.x, y=curr.y,
-                    description=f"Lane change: heading change {math.degrees(heading_delta):.0f}°",
-                    severity="medium",
-                ))
+                incidents.append(
+                    IncidentModel(
+                        id=f"incident-{count}",
+                        type="lane_change",
+                        timestamp=curr.t,
+                        x=curr.x,
+                        y=curr.y,
+                        description=f"Lane change: heading change {math.degrees(heading_delta):.0f}°",
+                        severity="medium",
+                    )
+                )
                 count += 1
 
     return _deduplicate_incidents(incidents)
