@@ -704,6 +704,8 @@ def _classify_incidents_simple(
             point = next((p for p in traj if p.t >= t), traj[-1])
             has_nearby = any(abs(inc.timestamp - point.t) < 2.0 for inc in incidents)
             if not has_nearby:
+                speed_mph = int(point.speed * 2.237)
+                heading_deg = int(math.degrees(_normalize_angle(point.heading)))
                 incidents.append(
                     IncidentModel(
                         id=f"incident-{count}",
@@ -711,7 +713,7 @@ def _classify_incidents_simple(
                         timestamp=point.t,
                         x=point.x,
                         y=point.y,
-                        description="Routine status update: Normal driving conditions.",
+                        description=f"Cruising at {speed_mph} mph, heading {heading_deg} degrees. All systems nominal.",
                         severity="low",
                     )
                 )

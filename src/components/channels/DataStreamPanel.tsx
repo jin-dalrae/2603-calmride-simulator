@@ -122,15 +122,25 @@ export function DataStreamPanel() {
             }}>
                 WAYMO_WORLD_MODEL_V2_TELEMETRY
             </div>
-        </div>
-    )
-}
 
             <style>{`
                 @keyframes pulse {
                     0% { opacity: 1; transform: scale(1); }
                     50% { opacity: 0.5; transform: scale(0.8); }
                     100% { opacity: 1; transform: scale(1); }
+                }
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 4px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: #111;
+                    border-radius: 2px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: #222;
                 }
             `}</style>
         </div>

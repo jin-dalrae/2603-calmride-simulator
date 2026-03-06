@@ -23,19 +23,40 @@ from models import (
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Try to import Waymax metrics
-# ---------------------------------------------------------------------------
 _WAYMAX_METRICS_AVAILABLE = False
-try:
-    from waymax.metrics import overlap as waymax_overlap
-    from waymax.metrics import roadgraph as waymax_roadgraph
-    from waymax.metrics import comfort as waymax_comfort
-    from waymax.metrics import route as waymax_route
-    from waymax.metrics import imitation as waymax_imitation
-    _WAYMAX_METRICS_AVAILABLE = True
-    logger.info("✅ Waymax metrics module loaded")
-except ImportError:
-    logger.warning("⚠️  Waymax metrics not available — using threshold-based classification only")
+waymax_overlap = None
+waymax_roadgraph = None
+waymax_comfort = None
+waymax_route = None
+waymax_imitation = None
+
+
+def _ensure_waymax_metrics():
+    global \
+        _WAYMAX_METRICS_AVAILABLE, \
+        waymax_overlap, \
+        waymax_roadgraph, \
+        waymax_comfort, \
+        waymax_route, \
+        waymax_imitation
+    if waymax_overlap is not None:
+        return _WAYMAX_METRICS_AVAILABLE
+    try:
+        from waymax.metrics import overlap, roadgraph, comfort, route, imitation
+
+        waymax_overlap = overlap
+        waymax_roadgraph = roadgraph
+        waymax_comfort = comfort
+        waymax_route = route
+        waymax_imitation = imitation
+        _WAYMAX_METRICS_AVAILABLE = True
+        logger.info("✅ Waymax metrics module loaded")
+    except ImportError:
+        _WAYMAX_METRICS_AVAILABLE = False
+        logger.warning(
+            "⚠️  Waymax metrics not available — using threshold-based classification only"
+        )
+    return _WAYMAX_METRICS_AVAILABLE
 
 
 def compute_waymax_metrics(state) -> Optional[WaymaxMetricsModel]:
@@ -49,7 +70,7 @@ def compute_waymax_metrics(state) -> Optional[WaymaxMetricsModel]:
         WaymaxMetricsModel with per-scenario metric results, or None if
         Waymax is not available.
     """
-    if not _WAYMAX_METRICS_AVAILABLE or state is None:
+    if not _ensure_waymax_metrics() or state is None:
         return None
 
     try:
@@ -118,51 +139,59 @@ def metrics_to_incidents(
     mid_point = ego.trajectory[mid_idx]
 
     if metrics.overlap:
-        incidents.append(IncidentModel(
-            id=f"incident-wx-{count}",
-            type="near_miss",
-            timestamp=mid_point.t,
-            x=mid_point.x,
-            y=mid_point.y,
-            description="Waymax detected bounding-box overlap with another agent",
-            severity="high",
-        ))
+        incidents.append(
+            IncidentModel(
+                id=f"incident-wx-{count}",
+                type="near_miss",
+                timestamp=mid_point.t,
+                x=mid_point.x,
+                y=mid_point.y,
+                description="Waymax detected bounding-box overlap with another agent",
+                severity="high",
+            )
+        )
         count += 1
 
     if metrics.offroad:
-        incidents.append(IncidentModel(
-            id=f"incident-wx-{count}",
-            type="offroad",
-            timestamp=mid_point.t,
-            x=mid_point.x,
-            y=mid_point.y,
-            description="Vehicle left the driveable road area",
-            severity="high",
-        ))
+        incidents.append(
+            IncidentModel(
+                id=f"incident-wx-{count}",
+                type="offroad",
+                timestamp=mid_point.t,
+                x=mid_point.x,
+                y=mid_point.y,
+                description="Vehicle left the driveable road area",
+                severity="high",
+            )
+        )
         count += 1
 
     if metrics.wrong_way:
-        incidents.append(IncidentModel(
-            id=f"incident-wx-{count}",
-            type="wrong_way",
-            timestamp=mid_point.t,
-            x=mid_point.x,
-            y=mid_point.y,
-            description="Vehicle detected driving against traffic direction",
-            severity="high",
-        ))
+        incidents.append(
+            IncidentModel(
+                id=f"incident-wx-{count}",
+                type="wrong_way",
+                timestamp=mid_point.t,
+                x=mid_point.x,
+                y=mid_point.y,
+                description="Vehicle detected driving against traffic direction",
+                severity="high",
+            )
+        )
         count += 1
 
     if metrics.kinematic_infeasible:
-        incidents.append(IncidentModel(
-            id=f"incident-wx-{count}",
-            type="erratic_movement",
-            timestamp=mid_point.t,
-            x=mid_point.x,
-            y=mid_point.y,
-            description="Kinematically infeasible motion detected (comfort violation)",
-            severity="medium",
-        ))
+        incidents.append(
+            IncidentModel(
+                id=f"incident-wx-{count}",
+                type="erratic_movement",
+                timestamp=mid_point.t,
+                x=mid_point.x,
+                y=mid_point.y,
+                description="Kinematically infeasible motion detected (comfort violation)",
+                severity="medium",
+            )
+        )
         count += 1
 
     return incidents

@@ -19,7 +19,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from config import CORS_ORIGINS, BACKEND_PORT
 from models import ParsedScenarioModel, ScenarioSummaryModel
 from services.data_loader import initialize, list_scenarios, get_scenario
-from services.metrics_service import compute_waymax_metrics, metrics_to_incidents, _WAYMAX_METRICS_AVAILABLE
+from services.metrics_service import (
+    compute_waymax_metrics,
+    metrics_to_incidents,
+    _ensure_waymax_metrics,
+)
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -66,7 +70,7 @@ async def root():
     return {
         "service": "CalmRide Backend",
         "version": "1.0.0",
-        "waymax_available": _WAYMAX_METRICS_AVAILABLE,
+        "waymax_available": _ensure_waymax_metrics(),
     }
 
 
@@ -76,7 +80,7 @@ async def health():
     return {
         "status": "ok",
         "scenario_count": len(scenarios),
-        "waymax_metrics_available": _WAYMAX_METRICS_AVAILABLE,
+        "waymax_metrics_available": _ensure_waymax_metrics(),
     }
 
 
@@ -91,7 +95,9 @@ async def get_scenario_detail(scenario_id: str):
     """Get full scenario data by ID."""
     scenario = get_scenario(scenario_id)
     if not scenario:
-        raise HTTPException(status_code=404, detail=f"Scenario '{scenario_id}' not found")
+        raise HTTPException(
+            status_code=404, detail=f"Scenario '{scenario_id}' not found"
+        )
     return scenario
 
 
@@ -103,12 +109,14 @@ async def get_scenario_metrics(scenario_id: str):
     """
     scenario = get_scenario(scenario_id)
     if not scenario:
-        raise HTTPException(status_code=404, detail=f"Scenario '{scenario_id}' not found")
+        raise HTTPException(
+            status_code=404, detail=f"Scenario '{scenario_id}' not found"
+        )
 
     return {
         "scenario_id": scenario_id,
         "waymax_metrics": scenario.waymax_metrics,
-        "waymax_available": _WAYMAX_METRICS_AVAILABLE,
+        "waymax_available": _ensure_waymax_metrics(),
     }
 
 
@@ -117,4 +125,5 @@ async def get_scenario_metrics(scenario_id: str):
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("main:app", host="0.0.0.0", port=BACKEND_PORT, reload=True)

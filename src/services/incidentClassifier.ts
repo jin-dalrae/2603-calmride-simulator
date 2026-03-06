@@ -57,8 +57,10 @@ export function classifyIncidents(agents: Agent[], egoId: string): Incident[] {
       const hasNearbyIncident = incidents.some(inc => Math.abs(inc.timestamp - point.t) < 2.0)
       
       if (!hasNearbyIncident) {
+        const speedMph = (point.speed * 2.237).toFixed(0)
+        const headingDeg = (normalizeAngle(point.heading) * 180 / Math.PI).toFixed(0)
         incidents.push(makeIncident('routine_update', point, incidentCount++,
-          'Routine status update: Normal driving conditions.', 'low'))
+          `Cruising at ${speedMph} mph, heading ${headingDeg}°. System stable.`, 'low'))
       }
     }
   }

@@ -26,7 +26,7 @@ export function TimelineBar() {
       boxShadow: '0 4px 24px rgba(0,0,0,0.5)'
     }}>
       <button onClick={togglePlay} style={btnStyle}>
-        {isPlaying ? '󰏦' : '󰐊'}
+        {isPlaying ? '⏸' : '▶'}
       </button>
 
       <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>

@@ -1,6 +1,6 @@
 import { useExplanationStore } from '../../store/useExplanationStore'
 
-const iconMap = { info: '󰋽', warning: '󰀦', safety: '󰈙', route: '󰈙' }
+const iconMap = { info: 'ℹ️', warning: '⚠️', safety: '🛡️', route: '🗺️' }
 
 export function FrontScreen() {
   const content = useExplanationStore(s => s.current?.frontScreen)

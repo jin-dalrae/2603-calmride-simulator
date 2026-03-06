@@ -86,9 +86,14 @@ Tone parameters (0=low, 100=high):
 - Technical depth: ${config.tone.technicalDepth}/100
 - Verbosity: ${config.tone.verbosity}/100
 
-FIRST, generate a transcript of the ENSEMBLE AGENTS having a conversation with each other in the "agentConversation" array. They must debate and discuss the incident, what happened, and what the best approach is to communicate with the passenger. They should act like a team in a control room. Let them talk for 3-5 messages.
+FIRST, generate a transcript of the ENSEMBLE AGENTS having a high-bandwidth internal conversation in the "agentConversation" array.
+They must debate the raw telemetry (velocity, orientation, proximity) and discuss the best psychological approach for the passenger.
+Each agent should speak from their unique persona. Do NOT repeat the same phrases. Use variety in sentence structure. Let them talk for 3-5 messages.
 
-IMPORTANT: If the incident type is "routine_update", the agents MUST discuss the current smooth operation and provide a helpful, non-urgent status update to the passenger (e.g., "We're making great time", "Traffic is light ahead"). If it's a safety incident with "medium" or "low" severity, remain calm and professional. Show urgency ONLY for "high" severity incidents.
+IMPORTANT: 
+- If incident type is "routine_update", agents should be brief but observant (e.g. "Environment is static, maintaining cruise").
+- If severity is "high", agents should show calculated urgency and focus on immediate safety assurance.
+- Avoid "I'm performing a..." clichés. Sound like a team in a space-mission control room.
 
 THEN, assign each agent to generate the finalized content for the channel best suited to their persona. Return a JSON object with the conversation and the content for all 4 channels.`
 }

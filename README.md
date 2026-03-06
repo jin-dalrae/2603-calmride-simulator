@@ -96,7 +96,7 @@ cp .env.example .env
 3. **Start the backend:**
 
 ```bash
-uvicorn main:app --reload --port 8000
+./venv/bin/uvicorn main:app --reload --port 8000
 ```
 
 4. **Start the frontend** (in a separate terminal):
