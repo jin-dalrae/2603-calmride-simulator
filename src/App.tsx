@@ -1,10 +1,12 @@
 import { useCallback, useEffect } from 'react'
 import { ControlRoom } from './components/layout/ControlRoom'
+import { DataViewer } from './components/data/DataViewer'
 import { usePlayback } from './hooks/usePlayback'
 import { useIncidentDetection } from './hooks/useIncidentDetection'
 import { useGeminiExplanation } from './hooks/useGeminiExplanation'
 import { useAmbientObservations } from './hooks/useAmbientObservations'
 import { usePlaybackStore } from './store/usePlaybackStore'
+import { useAppStore } from './store/useAppStore'
 import type { Incident } from './types/scenario'
 
 import { useScenarioStore } from './store/useScenarioStore'
@@ -13,6 +15,7 @@ export default function App() {
   const loadScenarioList = useScenarioStore(s => s.loadScenarioList)
   const loadScenario = useScenarioStore(s => s.loadScenario)
   const { setDuration } = usePlaybackStore()
+  const screen = useAppStore(s => s.screen)
 
   useEffect(() => {
     loadScenarioList().then(() => {
@@ -63,6 +66,10 @@ export default function App() {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [])
+
+  if (screen === 'data') {
+    return <DataViewer />
+  }
 
   return <ControlRoom />
 }

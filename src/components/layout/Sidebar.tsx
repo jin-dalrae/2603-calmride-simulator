@@ -4,8 +4,11 @@ import { ToneSliders } from '../controls/ToneSliders'
 import { PersonalitySelector } from '../controls/PersonalitySelector'
 import { RegenerateButton } from '../controls/RegenerateButton'
 import { DataAccumulator } from '../timeline/DataAccumulator'
+import { useAppStore } from '../../store/useAppStore'
 
 export function Sidebar() {
+  const setScreen = useAppStore(s => s.setScreen)
+
   return (
     <div style={{
       width: 280,
@@ -23,9 +26,27 @@ export function Sidebar() {
         letterSpacing: '2px',
         textTransform: 'uppercase',
         borderBottom: '1px solid #e0e0e0',
-        background: '#fafafa'
+        background: '#fafafa',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
       }}>
-        CALMRIDE_SIM
+        <span>CALMRIDE_SIM</span>
+        <button
+          onClick={() => setScreen('data')}
+          style={{
+            fontSize: 10,
+            padding: '4px 8px',
+            cursor: 'pointer',
+            background: '#222',
+            color: 'white',
+            border: 'none',
+            borderRadius: 4,
+            fontWeight: 'bold'
+          }}
+        >
+          RAW DATA
+        </button>
       </div>
 
       <div className="custom-scrollbar" style={{

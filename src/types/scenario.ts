@@ -61,6 +61,15 @@ export interface TrafficSignal {
   timestamp: number
 }
 
+export interface WaymaxMetrics {
+  overlap: boolean
+  offroad: boolean
+  wrongWay: boolean
+  kinematicInfeasible: boolean
+  logDivergence: number
+  routeFollowing: boolean
+}
+
 export interface ParsedScenario {
   id: string
   egoId: string
@@ -71,4 +80,5 @@ export interface ParsedScenario {
   incidents: Incident[]
   mapFeatures: MapFeature[]
   trafficSignals: TrafficSignal[]
+  waymaxMetrics?: WaymaxMetrics
 }

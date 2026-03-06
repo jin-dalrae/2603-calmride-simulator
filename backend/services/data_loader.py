@@ -403,6 +403,7 @@ def _load_single_waymax_scenario(scenario_id: str) -> Optional[ParsedScenarioMod
 def _convert_waymax_state(state, scenario_id: str) -> ParsedScenarioModel:
     """Convert a Waymax SimulatorState to CalmRide's ParsedScenarioModel."""
     import numpy as np
+    from services.metrics_service import compute_waymax_metrics, metrics_to_incidents
 
     agents: list[AgentModel] = []
     log_traj = state.log_trajectory
@@ -417,11 +418,8 @@ def _convert_waymax_state(state, scenario_id: str) -> ParsedScenarioModel:
         if not valid_mask.any():
             continue
 
-        # Determine agent type
-        # Waymo SDC is indicated in object_metadata.sda_idx
         is_ego = bool(state.object_metadata.is_sdc[obj_idx])
         obj_type = state.object_metadata.object_types[obj_idx]
-        # Waymax type mapping: 1=vehicle, 2=pedestrian, 3=cyclist
         type_map = {1: "vehicle", 2: "pedestrian", 3: "cyclist"}
         agent_type = "ego" if is_ego else type_map.get(int(obj_type), "vehicle")
 
@@ -485,13 +483,19 @@ def _convert_waymax_state(state, scenario_id: str) -> ParsedScenarioModel:
                 )
             )
 
-    # Extract road graph as map features
     map_features = _extract_waymax_map_features(state)
     traffic_signals = _extract_waymax_traffic_lights(state)
 
-    # Classify incidents
+    waymax_metrics = compute_waymax_metrics(state)
+
     ego_id = "ego"
     incidents = _classify_incidents_simple(agents, ego_id)
+
+    if waymax_metrics:
+        wx_incidents = metrics_to_incidents(
+            waymax_metrics, agents, ego_id, base_count=len(incidents)
+        )
+        incidents.extend(wx_incidents)
 
     duration = num_timesteps * dt
 
@@ -505,6 +509,7 @@ def _convert_waymax_state(state, scenario_id: str) -> ParsedScenarioModel:
         incidents=incidents,
         map_features=map_features,
         traffic_signals=traffic_signals,
+        waymax_metrics=waymax_metrics,
         source="womd",
     )
 

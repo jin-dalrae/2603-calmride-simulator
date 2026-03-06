@@ -57,6 +57,14 @@ function backendToFrontend(backend: BackendScenario): ParsedScenario {
       points: f.points,
     })),
     trafficSignals: backend.traffic_signals || [],
+    waymaxMetrics: backend.waymax_metrics ? {
+      overlap: backend.waymax_metrics.overlap,
+      offroad: backend.waymax_metrics.offroad,
+      wrongWay: backend.waymax_metrics.wrong_way,
+      kinematicInfeasible: backend.waymax_metrics.kinematic_infeasible,
+      logDivergence: backend.waymax_metrics.log_divergence,
+      routeFollowing: backend.waymax_metrics.route_following,
+    } : undefined
   }
 }
 
