@@ -3,9 +3,18 @@ import { useScenarioStore } from '../../store/useScenarioStore'
 
 const speeds = [0.25, 0.5, 1, 2, 4]
 
+const EMPTY_INCIDENTS: any[] = []
+
 export function TimelineBar() {
-  const { currentTime, isPlaying, speed, duration, togglePlay, setSpeed, seek } = usePlaybackStore()
-  const incidents = useScenarioStore(s => s.currentScenario?.incidents || [])
+  const currentTime = usePlaybackStore(s => s.currentTime)
+  const isPlaying = usePlaybackStore(s => s.isPlaying)
+  const speed = usePlaybackStore(s => s.speed)
+  const duration = usePlaybackStore(s => s.duration)
+  const togglePlay = usePlaybackStore(s => s.togglePlay)
+  const setSpeed = usePlaybackStore(s => s.setSpeed)
+  const seek = usePlaybackStore(s => s.seek)
+
+  const incidents = useScenarioStore(s => s.currentScenario?.incidents || EMPTY_INCIDENTS)
 
   return (
     <div style={{

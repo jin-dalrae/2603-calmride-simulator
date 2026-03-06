@@ -23,11 +23,22 @@ You control the AI's communication style in real-time using tone sliders (anxiet
 
 ## Tech Stack
 
+### Frontend
 - **Vite + React + TypeScript** — frontend framework
 - **Three.js** (React Three Fiber + drei) — 3D bird's-eye scene
 - **Zustand** — state management
 - **Google Gemini API** (`@google/generative-ai`) — explanation generation with structured JSON output
 - **Browser SpeechSynthesis API** — voice channel TTS
+
+### Backend (Waymax Integration)
+- **FastAPI** — Python REST API serving scenario data
+- **Waymax** (JAX) — Waymo's simulator for loading real WOMD scenarios and computing research-grade metrics
+- **JAX** — High-performance numerical computing (CPU or GPU)
+
+The backend is **optional** — the frontend works standalone with local sample scenarios. When the backend is running, it adds:
+- **Real WOMD scenarios** loaded via `waymax.dataloader` (103K+ segments)
+- **Research-grade metrics** via `waymax.metrics` (collision overlap, offroad, wrong-way, comfort)
+- **Server-side incident classification** with richer detection than the frontend's threshold-based approach
 
 ---
 
@@ -37,8 +48,9 @@ You control the AI's communication style in real-time using tone sliders (anxiet
 
 - Node.js 18+
 - A Google Gemini API key ([get one here](https://aistudio.google.com/apikey))
+- Python 3.10+ (for the backend — optional)
 
-### Install & Run
+### Install & Run (Frontend Only)
 
 ```bash
 cd calmride-simulator
@@ -61,6 +73,43 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 > Without a Gemini API key, the app still works — incident explanations fall back to locally generated templates.
 
+### Install & Run (With Waymax Backend)
+
+1. **Set up the Python backend:**
+
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+2. **Configure WOMD data access:**
+
+```bash
+cp .env.example .env
+# Edit .env and set WOMD_DATA_DIR to your WOMD TFRecord directory
+```
+
+> You need to download the Waymo Open Motion Dataset from [waymo.com/open](https://waymo.com/open). Accept the terms of use, then download the motion dataset TFRecord files.
+
+3. **Start the backend:**
+
+```bash
+uvicorn main:app --reload --port 8000
+```
+
+4. **Start the frontend** (in a separate terminal):
+
+```bash
+cd ..  # back to calmride-simulator root
+npm run dev
+```
+
+The frontend will automatically detect the backend and switch to loading scenarios from the API. The Vite dev server proxies `/api/*` requests to `localhost:8000`.
+
+> If the backend is not running, the frontend falls back to local sample scenarios — no configuration needed.
+
 ---
 
 ## How to Use
@@ -72,6 +121,8 @@ Use the **Scenario** dropdown in the sidebar to load one of the included scenari
 - **Intersection Stop** — Ego vehicle hard-brakes for a jaywalking pedestrian
 - **Highway Lane Change** — Ego vehicle changes lanes to pass a slow truck
 - **Pedestrian Crossing** — Ego vehicle yields at an uncontrolled crosswalk
+
+With the backend running, you'll also see WOMD scenarios loaded via Waymax.
 
 ### 2. Play the Scenario
 
@@ -87,6 +138,13 @@ The system automatically detects:
 - **Hard braking** — deceleration > 6 m/s²
 - **Sudden stops** — rapid speed drop to near zero
 - **Lane changes** — heading change > 15°
+
+With Waymax metrics enabled, additional detections include:
+
+- **Collision overlap** — bounding-box overlap with other agents
+- **Offroad** — vehicle leaves the driveable road area
+- **Wrong-way** — driving against traffic direction
+- **Kinematic infeasibility** — comfort violations (jerk, lateral acceleration)
 
 When an incident is detected, it triggers a Gemini API call and all 4 channel previews populate with generated explanations. A pulsing red ring appears at the incident location in the scene.
 
@@ -134,6 +192,8 @@ Click **Play** on the Voice channel card to hear the explanation spoken aloud vi
 
 ## Adding Custom Scenarios
 
+### Local JSON Files
+
 Place WOMD-Reasoning JSON files in `public/sample-scenarios/` following this structure:
 
 ```json
@@ -168,25 +228,55 @@ Place WOMD-Reasoning JSON files in `public/sample-scenarios/` following this str
 }
 ```
 
-Then add the filename to the `SCENARIO_FILES` array in `src/store/useScenarioStore.ts`.
-
 If `agents` and `map_features` are omitted, the parser generates synthetic trajectories from the Q&A text descriptions.
+
+### WOMD TFRecord Files (via Waymax)
+
+Place WOMD TFRecord files in `backend/data/womd/` (or set `WOMD_DATA_DIR` in `backend/.env`). The backend will automatically index and serve these scenarios via the API.
 
 ---
 
 ## Project Structure
 
 ```
-src/
-├── types/          # TypeScript interfaces (WOMD, scenario, channels, prompt)
-├── store/          # Zustand stores (scenario, playback, prompt, explanation)
-├── hooks/          # React hooks (playback loop, incident detection, Gemini trigger)
-├── services/       # Gemini API client, scenario parser, trajectory interpolator, incident classifier
-├── components/
-│   ├── layout/     # ControlRoom grid, Sidebar, ChannelStrip
-│   ├── scene/      # R3F components (EgoVehicle, SurroundingAgent, RoadMap, etc.)
-│   ├── timeline/   # TimelineBar, DataAccumulator
-│   ├── channels/   # FrontScreen, RearScreen, AppNotification, VoiceChannel
-│   └── controls/   # ScenarioPicker, SystemPromptEditor, ToneSliders, etc.
-└── utils/          # Color maps, math helpers
+calmride-simulator/
+├── src/                    # React frontend
+│   ├── types/              # TypeScript interfaces (WOMD, scenario, channels, prompt)
+│   ├── store/              # Zustand stores (scenario, playback, prompt, explanation)
+│   ├── hooks/              # React hooks (playback loop, incident detection, Gemini trigger)
+│   ├── services/           # API client, Gemini, scenario parser, trajectory interpolator
+│   ├── components/
+│   │   ├── layout/         # ControlRoom grid, Sidebar, ChannelStrip
+│   │   ├── scene/          # R3F components (EgoVehicle, SurroundingAgent, RoadMap, etc.)
+│   │   ├── timeline/       # TimelineBar, DataAccumulator
+│   │   ├── channels/       # FrontScreen, RearScreen, AppNotification, VoiceChannel
+│   │   └── controls/       # ScenarioPicker, SystemPromptEditor, ToneSliders, etc.
+│   └── utils/              # Color maps, math helpers
+├── backend/                # FastAPI + Waymax backend (optional)
+│   ├── main.py             # FastAPI app entry point
+│   ├── config.py           # Environment configuration
+│   ├── models.py           # Pydantic response models
+│   ├── services/
+│   │   ├── data_loader.py  # Waymax dataloader + sample JSON loader
+│   │   └── metrics_service.py  # Waymax metrics computation
+│   ├── requirements.txt    # Python dependencies
+│   └── .env.example        # Example environment variables
+└── public/
+    └── sample-scenarios/   # Local JSON scenario files (fallback)
 ```
+
+---
+
+## Waymax Integration
+
+The backend uses several [Waymax](https://github.com/waymo-research/waymax) components:
+
+| Waymax Module | How CalmRide Uses It |
+|---|---|
+| `waymax.dataloader` | Loads real WOMD scenarios (trajectories, maps, traffic signals) |
+| `waymax.metrics` | Computes overlap, offroad, wrong-way, comfort, and route metrics |
+| `waymax.datatypes` | Standardized data structures for simulator state |
+
+Waymax modules **not used**: `waymax.env` (RL environment), `waymax.rewards` (RL rewards), `waymax.agents` (sim agent training).
+
+> **Note:** Waymax is licensed for **non-commercial use** only. See the [Waymax License Agreement](https://github.com/waymo-research/waymax/blob/main/LICENSE).

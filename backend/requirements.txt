@@ -1,0 +1,15 @@
+# CalmRide Backend - Waymax Integration
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+
+# Waymax + JAX (CPU-only by default; see README for GPU)
+jax[cpu]
+waymo-waymax @ git+https://github.com/waymo-research/waymax.git@main
+
+# Data processing
+numpy>=1.24.0
+tensorflow>=2.15.0  # Required by waymax for TFRecord loading
+
+# CORS
+python-dotenv==1.0.1

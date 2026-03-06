@@ -6,7 +6,15 @@ import { useGeminiExplanation } from './hooks/useGeminiExplanation'
 import { usePlaybackStore } from './store/usePlaybackStore'
 import type { Incident } from './types/scenario'
 
+import { useScenarioStore } from './store/useScenarioStore'
+
 export default function App() {
+  const loadScenarioList = useScenarioStore(s => s.loadScenarioList)
+
+  useEffect(() => {
+    loadScenarioList()
+  }, [loadScenarioList])
+
   usePlayback()
 
   const { triggerExplanation } = useGeminiExplanation()

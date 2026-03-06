@@ -24,7 +24,7 @@ export interface QAPair {
   timestamp: number
 }
 
-export type IncidentType = 'hard_brake' | 'sudden_stop' | 'lane_change' | 'near_miss' | 'erratic_movement'
+export type IncidentType = 'hard_brake' | 'sudden_stop' | 'lane_change' | 'near_miss' | 'erratic_movement' | 'offroad' | 'wrong_way'
 
 export interface Incident {
   id: string
