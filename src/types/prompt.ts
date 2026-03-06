@@ -1,0 +1,13 @@
+export type Personality = 'professional' | 'friendly' | 'minimal'
+
+export interface ToneSettings {
+  anxietyLevel: number    // 0-100
+  technicalDepth: number  // 0-100
+  verbosity: number       // 0-100
+}
+
+export interface PromptConfig {
+  systemPrompt: string
+  personality: Personality
+  tone: ToneSettings
+}

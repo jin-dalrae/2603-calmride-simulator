@@ -1,0 +1,45 @@
+import { useCallback, useEffect } from 'react'
+import { ControlRoom } from './components/layout/ControlRoom'
+import { usePlayback } from './hooks/usePlayback'
+import { useIncidentDetection } from './hooks/useIncidentDetection'
+import { useGeminiExplanation } from './hooks/useGeminiExplanation'
+import { usePlaybackStore } from './store/usePlaybackStore'
+import type { Incident } from './types/scenario'
+
+export default function App() {
+  usePlayback()
+
+  const { triggerExplanation } = useGeminiExplanation()
+
+  const onIncident = useCallback((incident: Incident) => {
+    triggerExplanation(incident)
+  }, [triggerExplanation])
+
+  useIncidentDetection(onIncident)
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return
+
+      switch (e.code) {
+        case 'Space':
+          e.preventDefault()
+          usePlaybackStore.getState().togglePlay()
+          break
+        case 'ArrowLeft':
+          e.preventDefault()
+          usePlaybackStore.getState().seek(usePlaybackStore.getState().currentTime - 0.5)
+          break
+        case 'ArrowRight':
+          e.preventDefault()
+          usePlaybackStore.getState().seek(usePlaybackStore.getState().currentTime + 0.5)
+          break
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+
+  return <ControlRoom />
+}

@@ -1,0 +1,141 @@
+{
+  "sid": "scenario-pedestrian-crossing",
+  "ego": "ego",
+  "cur_time": 0,
+  "future_time": 9,
+  "env_q": [
+    "Describe the road environment.",
+    "Are there any crosswalks or signals?"
+  ],
+  "env_a": [
+    "The ego vehicle is on a two-lane urban road in a residential area. There are parked cars on both sides of the road. The speed limit is 25 mph.",
+    "There is a marked crosswalk ahead with a pedestrian crossing sign. No traffic signal at this location — it is an uncontrolled crosswalk."
+  ],
+  "ego_q": [
+    "What is the ego vehicle doing?",
+    "Does the ego vehicle stop?"
+  ],
+  "ego_a": [
+    "The ego vehicle is traveling at approximately 8 m/s (18 mph) in the residential zone, approaching the crosswalk.",
+    "Yes, the ego vehicle decelerates smoothly and stops before the crosswalk to yield to two pedestrians — an adult and a child — crossing from the left side."
+  ],
+  "sur_q": [
+    "Who is crossing the street?",
+    "Are there other vehicles nearby?",
+    "What is the cyclist doing?"
+  ],
+  "sur_a": [
+    "Two pedestrians are crossing — an adult holding a child's hand. They are walking at about 1.2 m/s from left to right.",
+    "There is a vehicle approaching from the opposite direction that is also slowing down for the pedestrians.",
+    "A cyclist is traveling behind the ego vehicle at approximately 5 m/s and also slows down as the ego vehicle stops."
+  ],
+  "int_q": [
+    "How does the ego vehicle yield to the pedestrians?",
+    "Is the situation safe?"
+  ],
+  "int_a": [
+    "The ego vehicle detects the pedestrians approaching the crosswalk and begins gentle braking from 8 m/s. It comes to a complete stop 2 meters before the crosswalk and waits for both pedestrians to fully cross before proceeding.",
+    "Yes, the ego vehicle handles the situation safely with smooth deceleration. Both the opposing vehicle and the cyclist behind also yield appropriately."
+  ],
+  "agents": [
+    {
+      "id": "ego",
+      "type": "vehicle",
+      "trajectory": [
+        {"t": 0, "x": 0, "y": 0, "heading": 0, "vx": 8, "vy": 0},
+        {"t": 0.5, "x": 4, "y": 0, "heading": 0, "vx": 8, "vy": 0},
+        {"t": 1.0, "x": 8, "y": 0, "heading": 0, "vx": 8, "vy": 0},
+        {"t": 1.5, "x": 12, "y": 0, "heading": 0, "vx": 8, "vy": 0},
+        {"t": 2.0, "x": 16, "y": 0, "heading": 0, "vx": 8, "vy": 0},
+        {"t": 2.5, "x": 19, "y": 0, "heading": 0, "vx": 6, "vy": 0},
+        {"t": 3.0, "x": 21, "y": 0, "heading": 0, "vx": 4, "vy": 0},
+        {"t": 3.5, "x": 22.5, "y": 0, "heading": 0, "vx": 2, "vy": 0},
+        {"t": 4.0, "x": 23, "y": 0, "heading": 0, "vx": 0, "vy": 0},
+        {"t": 4.5, "x": 23, "y": 0, "heading": 0, "vx": 0, "vy": 0},
+        {"t": 5.0, "x": 23, "y": 0, "heading": 0, "vx": 0, "vy": 0},
+        {"t": 5.5, "x": 23, "y": 0, "heading": 0, "vx": 0, "vy": 0},
+        {"t": 6.0, "x": 23, "y": 0, "heading": 0, "vx": 0, "vy": 0},
+        {"t": 6.5, "x": 23, "y": 0, "heading": 0, "vx": 0, "vy": 0},
+        {"t": 7.0, "x": 23.5, "y": 0, "heading": 0, "vx": 2, "vy": 0},
+        {"t": 7.5, "x": 25, "y": 0, "heading": 0, "vx": 4, "vy": 0},
+        {"t": 8.0, "x": 28, "y": 0, "heading": 0, "vx": 6, "vy": 0},
+        {"t": 8.5, "x": 32, "y": 0, "heading": 0, "vx": 7, "vy": 0},
+        {"t": 9.0, "x": 36, "y": 0, "heading": 0, "vx": 8, "vy": 0}
+      ]
+    },
+    {
+      "id": "ped-adult",
+      "type": "pedestrian",
+      "trajectory": [
+        {"t": 0, "x": 25, "y": 10, "heading": -1.57, "vx": 0, "vy": -1.2},
+        {"t": 1.0, "x": 25, "y": 8.8, "heading": -1.57, "vx": 0, "vy": -1.2},
+        {"t": 2.0, "x": 25, "y": 7.6, "heading": -1.57, "vx": 0, "vy": -1.2},
+        {"t": 3.0, "x": 25, "y": 6.4, "heading": -1.57, "vx": 0, "vy": -1.2},
+        {"t": 4.0, "x": 25, "y": 4, "heading": -1.57, "vx": 0, "vy": -1.2},
+        {"t": 5.0, "x": 25, "y": 1.5, "heading": -1.57, "vx": 0, "vy": -1.2},
+        {"t": 6.0, "x": 25, "y": -1, "heading": -1.57, "vx": 0, "vy": -1.2},
+        {"t": 7.0, "x": 25, "y": -4, "heading": -1.57, "vx": 0, "vy": -1.2},
+        {"t": 8.0, "x": 25, "y": -7, "heading": -1.57, "vx": 0, "vy": -1.2},
+        {"t": 9.0, "x": 25, "y": -10, "heading": -1.57, "vx": 0, "vy": -1.2}
+      ]
+    },
+    {
+      "id": "ped-child",
+      "type": "pedestrian",
+      "trajectory": [
+        {"t": 0, "x": 25, "y": 11, "heading": -1.57, "vx": 0, "vy": -1.2},
+        {"t": 1.0, "x": 25, "y": 9.8, "heading": -1.57, "vx": 0, "vy": -1.2},
+        {"t": 2.0, "x": 25, "y": 8.6, "heading": -1.57, "vx": 0, "vy": -1.2},
+        {"t": 3.0, "x": 25, "y": 7.4, "heading": -1.57, "vx": 0, "vy": -1.2},
+        {"t": 4.0, "x": 25, "y": 5, "heading": -1.57, "vx": 0, "vy": -1.2},
+        {"t": 5.0, "x": 25, "y": 2.5, "heading": -1.57, "vx": 0, "vy": -1.2},
+        {"t": 6.0, "x": 25, "y": 0, "heading": -1.57, "vx": 0, "vy": -1.2},
+        {"t": 7.0, "x": 25, "y": -3, "heading": -1.57, "vx": 0, "vy": -1.2},
+        {"t": 8.0, "x": 25, "y": -6, "heading": -1.57, "vx": 0, "vy": -1.2},
+        {"t": 9.0, "x": 25, "y": -9, "heading": -1.57, "vx": 0, "vy": -1.2}
+      ]
+    },
+    {
+      "id": "cyclist-1",
+      "type": "cyclist",
+      "trajectory": [
+        {"t": 0, "x": -10, "y": 1.5, "heading": 0, "vx": 5, "vy": 0},
+        {"t": 1.0, "x": -5, "y": 1.5, "heading": 0, "vx": 5, "vy": 0},
+        {"t": 2.0, "x": 0, "y": 1.5, "heading": 0, "vx": 5, "vy": 0},
+        {"t": 3.0, "x": 4, "y": 1.5, "heading": 0, "vx": 3, "vy": 0},
+        {"t": 4.0, "x": 6, "y": 1.5, "heading": 0, "vx": 1, "vy": 0},
+        {"t": 5.0, "x": 7, "y": 1.5, "heading": 0, "vx": 0.5, "vy": 0},
+        {"t": 6.0, "x": 7, "y": 1.5, "heading": 0, "vx": 0, "vy": 0},
+        {"t": 7.0, "x": 8, "y": 1.5, "heading": 0, "vx": 3, "vy": 0},
+        {"t": 8.0, "x": 12, "y": 1.5, "heading": 0, "vx": 5, "vy": 0},
+        {"t": 9.0, "x": 17, "y": 1.5, "heading": 0, "vx": 5, "vy": 0}
+      ]
+    }
+  ],
+  "map_features": [
+    {
+      "type": "lane_boundary",
+      "polyline": [{"x": -20, "y": -2}, {"x": 60, "y": -2}]
+    },
+    {
+      "type": "lane_boundary",
+      "polyline": [{"x": -20, "y": 2}, {"x": 60, "y": 2}]
+    },
+    {
+      "type": "lane_boundary",
+      "polyline": [{"x": -20, "y": -5}, {"x": 60, "y": -5}]
+    },
+    {
+      "type": "lane_boundary",
+      "polyline": [{"x": -20, "y": 5}, {"x": 60, "y": 5}]
+    },
+    {
+      "type": "crosswalk",
+      "polyline": [{"x": 24, "y": -6}, {"x": 24, "y": 6}]
+    },
+    {
+      "type": "crosswalk",
+      "polyline": [{"x": 26, "y": -6}, {"x": 26, "y": 6}]
+    }
+  ]
+}

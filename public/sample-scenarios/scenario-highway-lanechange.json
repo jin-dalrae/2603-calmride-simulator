@@ -1,0 +1,99 @@
+{
+  "sid": "scenario-highway-lanechange",
+  "ego": "ego",
+  "cur_time": 0,
+  "future_time": 9,
+  "env_q": [
+    "What is the road structure?",
+    "What are the traffic conditions?"
+  ],
+  "env_a": [
+    "The ego vehicle is traveling on a three-lane highway with moderate traffic. The speed limit is 65 mph.",
+    "Traffic is moderately congested in the right lane with a slower vehicle ahead. The center and left lanes have lighter traffic."
+  ],
+  "ego_q": [
+    "What is the ego vehicle's current speed?",
+    "What maneuver does the ego vehicle perform?"
+  ],
+  "ego_a": [
+    "The ego vehicle is traveling at approximately 25 m/s (56 mph) in the right lane.",
+    "The ego vehicle performs a lane change to the center lane to overtake a slower vehicle ahead, then returns to the right lane after passing."
+  ],
+  "sur_q": [
+    "What vehicles are nearby?",
+    "Is there a slow vehicle ahead?"
+  ],
+  "sur_a": [
+    "There is a slow-moving truck approximately 30 meters ahead in the right lane traveling at 15 m/s. There is a vehicle in the center lane approximately 40 meters behind.",
+    "Yes, a large truck in the right lane is traveling at approximately 15 m/s (34 mph), significantly slower than the ego vehicle's desired speed."
+  ],
+  "int_q": [
+    "How does the ego vehicle interact with the slow truck?",
+    "Is the lane change safe?"
+  ],
+  "int_a": [
+    "The ego vehicle detects the slow truck ahead and initiates a lane change to the center lane to maintain speed. After passing the truck, it signals and returns to the right lane.",
+    "The lane change is performed safely with sufficient gap in the center lane. The ego vehicle checks blind spots and signals before changing lanes."
+  ],
+  "agents": [
+    {
+      "id": "ego",
+      "type": "vehicle",
+      "trajectory": [
+        {"t": 0, "x": 0, "y": 0, "heading": 0, "vx": 25, "vy": 0},
+        {"t": 0.5, "x": 12.5, "y": 0, "heading": 0, "vx": 25, "vy": 0},
+        {"t": 1.0, "x": 25, "y": 0, "heading": 0, "vx": 25, "vy": 0},
+        {"t": 1.5, "x": 37.5, "y": 0, "heading": 0, "vx": 25, "vy": 0},
+        {"t": 2.0, "x": 50, "y": 0, "heading": 0, "vx": 25, "vy": 0},
+        {"t": 2.5, "x": 62, "y": 0, "heading": 0, "vx": 24, "vy": 0},
+        {"t": 3.0, "x": 73, "y": -0.5, "heading": -0.08, "vx": 23, "vy": -1},
+        {"t": 3.5, "x": 84, "y": -1.5, "heading": -0.15, "vx": 23, "vy": -2},
+        {"t": 4.0, "x": 96, "y": -3, "heading": -0.15, "vx": 24, "vy": -2},
+        {"t": 4.5, "x": 108, "y": -3.8, "heading": -0.05, "vx": 25, "vy": -0.5},
+        {"t": 5.0, "x": 120, "y": -4, "heading": 0, "vx": 25, "vy": 0},
+        {"t": 5.5, "x": 132, "y": -4, "heading": 0, "vx": 25, "vy": 0},
+        {"t": 6.0, "x": 145, "y": -4, "heading": 0, "vx": 26, "vy": 0},
+        {"t": 6.5, "x": 158, "y": -3.5, "heading": 0.08, "vx": 26, "vy": 1},
+        {"t": 7.0, "x": 171, "y": -2.5, "heading": 0.12, "vx": 26, "vy": 1.5},
+        {"t": 7.5, "x": 184, "y": -1, "heading": 0.08, "vx": 26, "vy": 1},
+        {"t": 8.0, "x": 197, "y": 0, "heading": 0, "vx": 25, "vy": 0},
+        {"t": 8.5, "x": 209, "y": 0, "heading": 0, "vx": 25, "vy": 0},
+        {"t": 9.0, "x": 222, "y": 0, "heading": 0, "vx": 25, "vy": 0}
+      ]
+    },
+    {
+      "id": "truck-1",
+      "type": "vehicle",
+      "trajectory": [
+        {"t": 0, "x": 30, "y": 0, "heading": 0, "vx": 15, "vy": 0},
+        {"t": 1.0, "x": 45, "y": 0, "heading": 0, "vx": 15, "vy": 0},
+        {"t": 2.0, "x": 60, "y": 0, "heading": 0, "vx": 15, "vy": 0},
+        {"t": 3.0, "x": 75, "y": 0, "heading": 0, "vx": 15, "vy": 0},
+        {"t": 4.0, "x": 90, "y": 0, "heading": 0, "vx": 15, "vy": 0},
+        {"t": 5.0, "x": 105, "y": 0, "heading": 0, "vx": 15, "vy": 0},
+        {"t": 6.0, "x": 120, "y": 0, "heading": 0, "vx": 15, "vy": 0},
+        {"t": 7.0, "x": 135, "y": 0, "heading": 0, "vx": 15, "vy": 0},
+        {"t": 8.0, "x": 150, "y": 0, "heading": 0, "vx": 15, "vy": 0},
+        {"t": 9.0, "x": 165, "y": 0, "heading": 0, "vx": 15, "vy": 0}
+      ]
+    }
+  ],
+  "map_features": [
+    {
+      "type": "lane_boundary",
+      "polyline": [{"x": -30, "y": 2}, {"x": 250, "y": 2}]
+    },
+    {
+      "type": "lane_boundary",
+      "polyline": [{"x": -30, "y": -2}, {"x": 250, "y": -2}]
+    },
+    {
+      "type": "lane_boundary",
+      "polyline": [{"x": -30, "y": -6}, {"x": 250, "y": -6}]
+    },
+    {
+      "type": "lane_boundary",
+      "polyline": [{"x": -30, "y": -10}, {"x": 250, "y": -10}]
+    }
+  ]
+}
