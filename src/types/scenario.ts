@@ -12,6 +12,9 @@ export type AgentType = 'ego' | 'vehicle' | 'pedestrian' | 'cyclist'
 export interface Agent {
   id: string
   type: AgentType
+  length?: number
+  width?: number
+  height?: number
   trajectory: TrajectoryPoint[]
 }
 
@@ -36,9 +39,26 @@ export interface Incident {
   severity: 'low' | 'medium' | 'high'
 }
 
+export type MapFeatureType =
+  | 'LaneCenter-Freeway' | 'LaneCenter-SurfaceStreet' | 'LaneCenter-BikeLane'
+  | 'RoadLine-BrokenSingleWhite' | 'RoadLine-SolidSingleWhite' | 'RoadLine-SolidDoubleWhite'
+  | 'RoadLine-BrokenSingleYellow' | 'RoadLine-BrokenDoubleYellow'
+  | 'RoadLine-SolidSingleYellow' | 'RoadLine-SolidDoubleYellow' | 'RoadLine-PassingDoubleYellow'
+  | 'RoadEdgeBoundary' | 'RoadEdgeMedian'
+  | 'StopSign' | 'Crosswalk' | 'SpeedBump'
+  | 'lane_boundary' | 'crosswalk' | 'stop_sign' | 'speed_bump' // Fallback types
+
 export interface MapFeature {
-  type: 'lane_boundary' | 'crosswalk' | 'stop_sign' | 'speed_bump'
+  type: MapFeatureType
   points: { x: number; y: number }[]
+}
+
+export interface TrafficSignal {
+  id: string
+  x: number
+  y: number
+  state: number // 0-8 (Waymo palette)
+  timestamp: number
 }
 
 export interface ParsedScenario {
@@ -50,4 +70,5 @@ export interface ParsedScenario {
   qaPairs: QAPair[]
   incidents: Incident[]
   mapFeatures: MapFeature[]
+  trafficSignals: TrafficSignal[]
 }

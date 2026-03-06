@@ -29,6 +29,7 @@ export interface BackendScenario {
     agents: {
         id: string
         type: 'ego' | 'vehicle' | 'pedestrian' | 'cyclist'
+        length: number; width: number; height: number
         trajectory: {
             t: number; x: number; y: number
             heading: number; speed: number; accel: number
@@ -44,6 +45,7 @@ export interface BackendScenario {
         severity: 'low' | 'medium' | 'high'
     }[]
     map_features: { type: string; points: { x: number; y: number }[] }[]
+    traffic_signals: { id: string; x: number; y: number; state: number; timestamp: number }[]
     waymax_metrics: {
         overlap: boolean; offroad: boolean; wrong_way: boolean
         kinematic_infeasible: boolean; log_divergence: number

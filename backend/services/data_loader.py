@@ -159,7 +159,13 @@ def _parse_sample_json(raw: dict, fallback_id: str) -> ParsedScenarioModel:
                 )
                 for p in a.get("trajectory", [])
             ]
-            agents.append(AgentModel(id=a["id"], type=a["type"], trajectory=trajectory))
+            agents.append(AgentModel(
+                id=a["id"], type=a["type"], 
+                length=a.get("length", 4.5 if a["type"] == "vehicle" else 0.6),
+                width=a.get("width", 2.0 if a["type"] == "vehicle" else 0.6),
+                height=a.get("height", 1.5 if a["type"] == "vehicle" else 1.8),
+                trajectory=trajectory
+            ))
     else:
         agents = _generate_synthetic_agents(raw, duration, cur_time)
 
@@ -215,7 +221,7 @@ def _generate_synthetic_agents(raw: dict, duration: float, cur_time: float) -> l
         y += math.sin(heading) * speed * dt
         ego_traj.append(TrajectoryPointModel(t=t, x=x, y=y, heading=heading, speed=speed, accel=accel))
 
-    agents = [AgentModel(id="ego", type="ego", trajectory=ego_traj)]
+    agents = [AgentModel(id="ego", type="ego", length=4.5, width=2.0, height=1.5, trajectory=ego_traj)]
 
     # Surrounding agents
     sur_answers = raw.get("sur_a", [])
@@ -237,7 +243,14 @@ def _generate_synthetic_agents(raw: dict, duration: float, cur_time: float) -> l
             ay = offset_y + math.sin(agent_heading) * agent_speed * i * dt
             traj.append(TrajectoryPointModel(t=t, x=ax, y=ay, heading=agent_heading, speed=agent_speed, accel=0))
 
-        agents.append(AgentModel(id=f"agent-{idx + 1}", type=agent_type, trajectory=traj))
+        agents.append(AgentModel(
+            id=f"agent-{idx + 1}", 
+            type=agent_type, 
+            length=1.0 if is_ped else 2.0 if is_cyclist else 4.0,
+            width=1.0 if is_ped else 0.8 if is_cyclist else 1.8,
+            height=1.8 if is_ped else 1.5 if is_cyclist else 1.4,
+            trajectory=traj
+        ))
 
     return agents
 
@@ -323,11 +336,21 @@ def _convert_waymax_state(state, scenario_id: str) -> ParsedScenarioModel:
             continue
 
         # Determine agent type
-        is_ego = (obj_idx == 0)  # First object is typically SDC
+        # Waymo SDC is indicated in object_metadata.sda_idx
+        is_ego = (obj_idx == state.object_metadata.sda_index)
         obj_type = state.object_metadata.object_types[obj_idx]
         # Waymax type mapping: 1=vehicle, 2=pedestrian, 3=cyclist
         type_map = {1: "vehicle", 2: "pedestrian", 3: "cyclist"}
         agent_type = "ego" if is_ego else type_map.get(int(obj_type), "vehicle")
+
+        # Dimensions from metadata
+        length = float(state.object_metadata.length[obj_idx])
+        width = float(state.object_metadata.width[obj_idx])
+        height = float(state.object_metadata.height[obj_idx])
+
+        # Skip invalid or tiny objects
+        if length < 0.1 or width < 0.1:
+            continue
 
         trajectory: list[TrajectoryPointModel] = []
         for t_idx in range(num_timesteps):
@@ -360,11 +383,15 @@ def _convert_waymax_state(state, scenario_id: str) -> ParsedScenarioModel:
             agents.append(AgentModel(
                 id="ego" if is_ego else f"agent-{obj_idx}",
                 type=agent_type,
+                length=length,
+                width=width,
+                height=height,
                 trajectory=trajectory,
             ))
 
     # Extract road graph as map features
     map_features = _extract_waymax_map_features(state)
+    traffic_signals = _extract_waymax_traffic_lights(state)
 
     # Classify incidents
     ego_id = "ego"
@@ -381,6 +408,7 @@ def _convert_waymax_state(state, scenario_id: str) -> ParsedScenarioModel:
         qa_pairs=[],  # WOMD doesn't have Q&A — only WOMD-Reasoning does
         incidents=incidents,
         map_features=map_features,
+        traffic_signals=traffic_signals,
         source="womd",
     )
 
@@ -388,19 +416,33 @@ def _convert_waymax_state(state, scenario_id: str) -> ParsedScenarioModel:
 def _extract_waymax_map_features(state) -> list[MapFeatureModel]:
     """Extract road graph features from a Waymax state."""
     features: list[MapFeatureModel] = []
+    if not _WAYMAX_AVAILABLE or state is None:
+        return features
 
     try:
         roadgraph = state.roadgraph_points
         if roadgraph is None:
             return features
 
-        # Group road points by type
-        # Waymax road point types: 1=lane_center, 2=road_edge, 3=lane_boundary, etc.
+        # Detailed Waymo map element mapping
+        # types according to waymax/visualization/color.py and map.proto
         type_map = {
-            1: "lane_center",
-            2: "road_edge",
-            3: "lane_boundary",
-            # Crosswalks and other features handled separately if available
+            1: "LaneCenter-Freeway",
+            2: "LaneCenter-SurfaceStreet",
+            3: "LaneCenter-BikeLane",
+            6: "RoadLine-BrokenSingleWhite",
+            7: "RoadLine-SolidSingleWhite",
+            8: "RoadLine-SolidDoubleWhite",
+            9: "RoadLine-BrokenSingleYellow",
+            10: "RoadLine-BrokenDoubleYellow",
+            11: "RoadLine-SolidSingleYellow",
+            12: "RoadLine-SolidDoubleYellow",
+            13: "RoadLine-PassingDoubleYellow",
+            15: "RoadEdgeBoundary",
+            16: "RoadEdgeMedian",
+            17: "StopSign",
+            18: "Crosswalk",
+            19: "SpeedBump",
         }
 
         valid = roadgraph.valid
@@ -416,8 +458,9 @@ def _extract_waymax_map_features(state) -> list[MapFeatureModel]:
             xs = x_coords[mask]
             ys = y_coords[mask]
 
-            # Subsample for performance (roads can have thousands of points)
-            step = max(1, len(xs) // 200)
+            # Better subsampling: keep more detail for road lines
+            limit = 400 if "RoadLine" in feature_name else 200
+            step = max(1, len(xs) // limit)
             points = [{"x": float(xs[i]), "y": float(ys[i])} for i in range(0, len(xs), step)]
 
             if points:
@@ -427,6 +470,40 @@ def _extract_waymax_map_features(state) -> list[MapFeatureModel]:
         logger.warning(f"Could not extract map features: {e}")
 
     return features
+
+
+def _extract_waymax_traffic_lights(state) -> list[TrafficSignalModel]:
+    """Extract traffic light states from Waymax state."""
+    signals = []
+    try:
+        if not hasattr(state, 'log_traffic_light'):
+            return []
+            
+        tl = state.log_traffic_light
+        # Shape: (num_signals, num_timesteps)
+        num_signals = tl.state.shape[0]
+        num_timesteps = tl.state.shape[1]
+        dt = 0.1
+
+        for s_idx in range(num_signals):
+            valid_mask = tl.valid[s_idx]
+            if not valid_mask.any():
+                continue
+                
+            # For simplicity, we sample the states at their timestamps
+            for t_idx in range(num_timesteps):
+                if valid_mask[t_idx]:
+                    signals.append(TrafficSignalModel(
+                        id=f"tl-{s_idx}",
+                        x=float(tl.x[s_idx, t_idx]),
+                        y=float(tl.y[s_idx, t_idx]),
+                        state=int(tl.state[s_idx, t_idx]),
+                        timestamp=t_idx * dt
+                    ))
+    except Exception as e:
+        logger.warning(f"Could not extract traffic lights: {e}")
+        
+    return signals
 
 
 # ===========================================================================

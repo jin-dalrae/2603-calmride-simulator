@@ -5,6 +5,7 @@ import { SurroundingAgent } from './SurroundingAgent'
 import { RoadMap } from './RoadMap'
 import { TrajectoryLine } from './TrajectoryLine'
 import { IncidentMarker } from './IncidentMarker'
+import { TrafficSignals } from './TrafficSignals'
 import { useScenarioStore } from '../../store/useScenarioStore'
 import { usePlaybackStore } from '../../store/usePlaybackStore'
 
@@ -27,6 +28,7 @@ export function SceneCanvas() {
         {scenario && (
           <>
             <RoadMap features={scenario.mapFeatures} />
+            <TrafficSignals signals={scenario.trafficSignals} time={currentTime} />
 
             {scenario.agents.map(agent => (
               agent.id === scenario.egoId ? (

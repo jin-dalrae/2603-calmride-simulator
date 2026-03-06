@@ -40,6 +40,9 @@ function backendToFrontend(backend: BackendScenario): ParsedScenario {
     agents: backend.agents.map(a => ({
       id: a.id,
       type: a.type,
+      length: a.length,
+      width: a.width,
+      height: a.height,
       trajectory: a.trajectory,
     })),
     qaPairs: backend.qa_pairs.map(qa => ({
@@ -61,6 +64,7 @@ function backendToFrontend(backend: BackendScenario): ParsedScenario {
       type: f.type as any,
       points: f.points,
     })),
+    trafficSignals: backend.traffic_signals || [],
   }
 }
 

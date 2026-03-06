@@ -25,6 +25,9 @@ AgentType = Literal["ego", "vehicle", "pedestrian", "cyclist"]
 class AgentModel(BaseModel):
     id: str
     type: AgentType
+    length: float = 4.5
+    width: float = 2.0
+    height: float = 1.5
     trajectory: list[TrajectoryPointModel]
 
 
@@ -59,14 +62,29 @@ class IncidentModel(BaseModel):
 
 # ---------- Map ----------
 MapFeatureType = Literal[
-    "lane_boundary", "crosswalk", "stop_sign", "speed_bump",
-    "lane_center", "road_edge",  # Additional from Waymax roadgraph
+    "LaneCenter-Freeway", "LaneCenter-SurfaceStreet", "LaneCenter-BikeLane",
+    "RoadLine-BrokenSingleWhite", "RoadLine-SolidSingleWhite", "RoadLine-SolidDoubleWhite",
+    "RoadLine-BrokenSingleYellow", "RoadLine-BrokenDoubleYellow",
+    "RoadLine-SolidSingleYellow", "RoadLine-SolidDoubleYellow", "RoadLine-PassingDoubleYellow",
+    "RoadEdgeBoundary", "RoadEdgeMedian",
+    "StopSign", "Crosswalk", "SpeedBump",
+    "lane_boundary", "crosswalk", "stop_sign", "speed_bump", # Fallback
+    "lane_center", "road_edge", # Fallback
 ]
 
 
 class MapFeatureModel(BaseModel):
     type: MapFeatureType
     points: list[dict]  # [{x, y}]
+
+
+# ---------- Traffic Signals ----------
+class TrafficSignalModel(BaseModel):
+    id: str
+    x: float
+    y: float
+    state: int  # 0-8 (Waymo palette)
+    timestamp: float
 
 
 # ---------- Waymax Metrics ----------
@@ -101,5 +119,6 @@ class ParsedScenarioModel(BaseModel):
     qa_pairs: list[QAPairModel]
     incidents: list[IncidentModel]
     map_features: list[MapFeatureModel]
+    traffic_signals: list[TrafficSignalModel] = []
     waymax_metrics: Optional[WaymaxMetricsModel] = None
     source: Literal["womd", "womd_reasoning", "sample"] = "sample"
