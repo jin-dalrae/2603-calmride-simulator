@@ -4,11 +4,12 @@ import { usePlaybackStore } from '../store/usePlaybackStore'
 import { useExplanationStore } from '../store/useExplanationStore'
 import { interpolateAgent } from '../services/trajectoryInterpolator'
 import type { ChannelExplanation, AgentMessage } from '../types/channels'
+import type { Agent } from '../types/scenario'
 
 /**
- * When no incident is active, periodically scan the real scene data
- * and generate ambient observations from actual agent positions,
- * types, speeds and distances — no synthetic/mock content.
+ * Generates ambient observations from real WOMD vision data:
+ * spatial relationships, relative velocities, crossing paths,
+ * approach vectors, lane positions, and trajectory predictions.
  */
 export function useAmbientObservations() {
   const lastFireTime = useRef(0)
@@ -22,17 +23,17 @@ export function useAmbientObservations() {
       const { current, loading } = useExplanationStore.getState()
 
       if (!scenario || !isPlaying || loading) return
-      // Don't interrupt active incident explanations that haven't resolved
       if (current && !useExplanationStore.getState().consensusReached) return
-      // Throttle: at most every 6 seconds of playback
-      if (Math.abs(time - lastFireTime.current) < 6) return
+      if (Math.abs(time - lastFireTime.current) < 5) return
 
       const ego = scenario.agents.find(a => a.id === scenario.egoId)
       if (!ego) return
       const egoState = interpolateAgent(ego.trajectory, time)
       if (!egoState.visible) return
 
-      // Gather nearby agents with real data
+      // Also get ego state slightly in the future for trajectory prediction
+      const egoFuture = interpolateAgent(ego.trajectory, time + 1.0)
+
       const nearby = scenario.agents
         .filter(a => a.id !== scenario.egoId)
         .map(a => {
@@ -42,7 +43,45 @@ export function useAmbientObservations() {
             (state.x - egoState.x) ** 2 + (state.y - egoState.y) ** 2
           )
           if (dist > 80) return null
-          return { agent: a, state, dist }
+
+          // Future state for trajectory prediction
+          const futureState = interpolateAgent(a.trajectory, time + 1.0)
+          const futureDist = futureState.visible
+            ? Math.sqrt((futureState.x - (egoFuture.visible ? egoFuture.x : egoState.x)) ** 2 +
+                        (futureState.y - (egoFuture.visible ? egoFuture.y : egoState.y)) ** 2)
+            : dist
+
+          // Compute spatial relationship relative to ego heading
+          const dx = state.x - egoState.x
+          const dy = state.y - egoState.y
+          const cosH = Math.cos(egoState.heading)
+          const sinH = Math.sin(egoState.heading)
+          // Project onto ego's forward/lateral axes
+          const forward = dx * cosH + dy * sinH   // positive = ahead
+          const lateral = -dx * sinH + dy * cosH   // positive = left
+
+          // Heading difference (are they going same direction, crossing, oncoming?)
+          const headingDiff = normalizeAngle(state.heading - egoState.heading)
+
+          // Closing rate (negative = approaching)
+          const closingRate = futureDist - dist // per second
+
+          return {
+            agent: a,
+            state,
+            futureState,
+            dist,
+            futureDist,
+            forward,
+            lateral,
+            headingDiff,
+            closingRate,
+            position: getRelativePosition(forward, lateral),
+            direction: getRelativeDirection(headingDiff),
+            approaching: closingRate < -0.5,
+            receding: closingRate > 0.5,
+            crossingPath: Math.abs(headingDiff) > 0.5 && Math.abs(headingDiff) < 2.6 && dist < 30,
+          }
         })
         .filter((a): a is NonNullable<typeof a> => a !== null)
         .sort((a, b) => a.dist - b.dist)
@@ -52,7 +91,7 @@ export function useAmbientObservations() {
       lastFireTime.current = time
       firedCount.current++
 
-      const observation = buildAmbientObservation(egoState, nearby, time)
+      const observation = buildVisionObservation(egoState, nearby, time)
       if (!observation) return
 
       const { setExplanation } = useExplanationStore.getState()
@@ -63,7 +102,7 @@ export function useAmbientObservations() {
           timestamp: time,
           x: egoState.x,
           y: egoState.y,
-          description: 'Ambient scene observation',
+          description: 'Vision data observation',
           severity: 'low',
         },
         observation
@@ -74,122 +113,215 @@ export function useAmbientObservations() {
   }, [])
 }
 
-interface NearbyAgent {
-  agent: { id: string; type: string }
-  state: { x: number; y: number; heading: number; speed: number }
-  dist: number
+function normalizeAngle(a: number): number {
+  while (a > Math.PI) a -= 2 * Math.PI
+  while (a < -Math.PI) a += 2 * Math.PI
+  return a
 }
 
-function buildAmbientObservation(
+function getRelativePosition(forward: number, lateral: number): string {
+  const fwd = forward > 3 ? 'ahead' : forward < -3 ? 'behind' : 'alongside'
+  const lat = lateral > 2 ? 'left' : lateral < -2 ? 'right' : ''
+  if (lat && fwd !== 'alongside') return `${fwd}-${lat}`
+  return lat || fwd
+}
+
+function getRelativeDirection(headingDiff: number): string {
+  const abs = Math.abs(headingDiff)
+  if (abs < 0.3) return 'same direction'
+  if (abs > 2.8) return 'oncoming'
+  if (headingDiff > 0) return 'crossing left-to-right'
+  return 'crossing right-to-left'
+}
+
+interface EnrichedAgent {
+  agent: Agent
+  state: { x: number; y: number; heading: number; speed: number }
+  futureState: { x: number; y: number; heading: number; speed: number; visible: boolean }
+  dist: number
+  futureDist: number
+  forward: number
+  lateral: number
+  headingDiff: number
+  closingRate: number
+  position: string
+  direction: string
+  approaching: boolean
+  receding: boolean
+  crossingPath: boolean
+}
+
+function buildVisionObservation(
   egoState: { x: number; y: number; heading: number; speed: number },
-  nearby: NearbyAgent[],
+  nearby: EnrichedAgent[],
   time: number,
 ): ChannelExplanation | null {
   const egoSpeedMph = (egoState.speed * 2.237).toFixed(0)
+  const egoSpeedKmh = (egoState.speed * 3.6).toFixed(0)
   const closest = nearby[0]
   const peds = nearby.filter(a => a.agent.type === 'pedestrian')
   const cyclists = nearby.filter(a => a.agent.type === 'cyclist')
   const vehicles = nearby.filter(a => a.agent.type === 'vehicle')
+  const approaching = nearby.filter(a => a.approaching)
+  const crossing = nearby.filter(a => a.crossingPath)
 
-  // Build agent conversation from real data
   const messages: AgentMessage[] = []
 
-  // Operational agent: factual scan
-  const scanParts: string[] = []
-  if (vehicles.length > 0) scanParts.push(`${vehicles.length} vehicle${vehicles.length > 1 ? 's' : ''}`)
-  if (peds.length > 0) scanParts.push(`${peds.length} pedestrian${peds.length > 1 ? 's' : ''}`)
-  if (cyclists.length > 0) scanParts.push(`${cyclists.length} cyclist${cyclists.length > 1 ? 's' : ''}`)
+  // === OPERATIONAL: Full vision scan with spatial detail ===
+  const zoneBreakdown = [
+    { label: 'forward', agents: nearby.filter(a => a.forward > 3) },
+    { label: 'lateral', agents: nearby.filter(a => Math.abs(a.forward) <= 3) },
+    { label: 'rear', agents: nearby.filter(a => a.forward < -3) },
+  ].filter(z => z.agents.length > 0)
+
+  const zoneSummary = zoneBreakdown
+    .map(z => `${z.label}: ${z.agents.length} (closest ${z.agents[0].dist.toFixed(1)}m)`)
+    .join(' | ')
+
   messages.push({
     speaker: 'Operational',
-    text: `Scanning perimeter at T+${time.toFixed(1)}s. Detected ${scanParts.join(', ')} within 80m. Closest: ${closest.agent.type} at ${closest.dist.toFixed(1)}m, moving ${closest.state.speed.toFixed(1)} m/s. Ego speed: ${egoSpeedMph} mph.`,
+    text: `VISION SCAN T+${time.toFixed(1)}s — ${nearby.length} objects detected. ` +
+      `Zones: [${zoneSummary}]. ` +
+      `${approaching.length > 0 ? `${approaching.length} approaching (rate: ${approaching[0].closingRate.toFixed(1)} m/s). ` : ''}` +
+      `${crossing.length > 0 ? `WARNING: ${crossing.length} crossing trajectory detected. ` : ''}` +
+      `Ego: ${egoSpeedKmh} km/h, heading ${(egoState.heading * 180 / Math.PI).toFixed(0)}°.`,
   })
 
-  // Comfort agent: reassurance based on actual distances
-  if (peds.length > 0) {
-    const closestPed = peds[0]
-    if (closestPed.dist > 20) {
+  // === COMFORT: Context-aware reassurance using vision data ===
+  if (crossing.length > 0) {
+    const crosser = crossing[0]
+    const label = crosser.agent.type === 'pedestrian' ? 'A person' :
+                  crosser.agent.type === 'cyclist' ? 'A cyclist' : 'A vehicle'
+    messages.push({
+      speaker: 'Comfort',
+      text: `${label} is crossing our path ${crosser.position}, ${crosser.dist.toFixed(0)}m away. ` +
+        `They're moving ${crosser.direction} at ${crosser.state.speed.toFixed(1)} m/s. ` +
+        (crosser.dist > 15
+          ? `Plenty of time and space — no need to worry.`
+          : crosser.dist > 8
+          ? `We're tracking them carefully. Safe margin maintained.`
+          : `We see them and are prepared to adjust. You're safe.`),
+    })
+  } else if (peds.length > 0) {
+    const ped = peds[0]
+    const pedAction = ped.state.speed < 0.3 ? 'standing still' :
+                      ped.state.speed < 1.0 ? 'walking slowly' : 'walking'
+    messages.push({
+      speaker: 'Comfort',
+      text: `Pedestrian detected ${ped.position}, ${ped.dist.toFixed(0)}m away, ${pedAction} (${ped.state.speed.toFixed(1)} m/s). ` +
+        `Moving ${ped.direction}. ` +
+        (ped.approaching
+          ? `They're getting closer but we're watching. ${ped.dist > 10 ? 'No concern yet.' : 'Ready to yield if needed.'}`
+          : `${ped.receding ? 'Moving away from us.' : 'Holding steady.'} No worries.`),
+    })
+  } else if (cyclists.length > 0) {
+    const cyc = cyclists[0]
+    messages.push({
+      speaker: 'Comfort',
+      text: `Cyclist ${cyc.position} at ${cyc.dist.toFixed(0)}m, ${cyc.direction}, speed ${cyc.state.speed.toFixed(1)} m/s. ` +
+        (cyc.approaching
+          ? `Approaching — giving extra clearance.`
+          : `Maintaining safe buffer. Ride on.`),
+    })
+  } else {
+    const closestVeh = vehicles[0]
+    if (closestVeh) {
       messages.push({
         speaker: 'Comfort',
-        text: `Pedestrian detected ${closestPed.dist.toFixed(0)}m away — well outside our safety envelope. No concerns, maintaining course.`,
-      })
-    } else if (closestPed.dist > 8) {
-      messages.push({
-        speaker: 'Comfort',
-        text: `Pedestrian at ${closestPed.dist.toFixed(0)}m, tracking closely. Speed is ${closestPed.state.speed.toFixed(1)} m/s. Comfortable margin maintained — monitoring trajectory.`,
-      })
-    } else {
-      messages.push({
-        speaker: 'Comfort',
-        text: `Pedestrian nearby at ${closestPed.dist.toFixed(0)}m. We're watching carefully and ready to yield if needed. Your safety is the priority.`,
+        text: `Nearest vehicle is ${closestVeh.position}, ${closestVeh.dist.toFixed(0)}m away, ` +
+          `${closestVeh.direction} at ${(closestVeh.state.speed * 3.6).toFixed(0)} km/h. ` +
+          (closestVeh.approaching ? 'Closing in slowly — normal traffic flow.' : 'Stable spacing.') +
+          ` Everything looks routine.`,
       })
     }
-  } else if (cyclists.length > 0) {
-    const closestCyclist = cyclists[0]
-    messages.push({
-      speaker: 'Comfort',
-      text: `Cyclist spotted ${closestCyclist.dist.toFixed(0)}m away at ${closestCyclist.state.speed.toFixed(1)} m/s. Giving them plenty of space.`,
-    })
-  } else {
-    messages.push({
-      speaker: 'Comfort',
-      text: `All clear around us — ${vehicles.length} vehicle${vehicles.length > 1 ? 's' : ''} in view, all at safe distance. Smooth sailing.`,
-    })
   }
 
-  // Technical agent: numbers
-  const closestApproaching = closest.state.speed > 0.5
-  const relSpeed = Math.abs(egoState.speed - closest.state.speed)
+  // === TECHNICAL: Detailed perception metrics ===
+  const top3 = nearby.slice(0, 3)
+  const techLines = top3.map((a, i) => {
+    const ttc = a.approaching && Math.abs(a.closingRate) > 0.1
+      ? (a.dist / Math.abs(a.closingRate)).toFixed(1) + 's'
+      : '∞'
+    return `[${i + 1}] ${a.agent.type.toUpperCase()} ${a.position} | ` +
+      `range: ${a.dist.toFixed(1)}m → ${a.futureDist.toFixed(1)}m (+1s) | ` +
+      `v: ${a.state.speed.toFixed(1)} m/s | Δhdg: ${(a.headingDiff * 180 / Math.PI).toFixed(0)}° | ` +
+      `closing: ${a.closingRate.toFixed(2)} m/s | TTC: ${ttc}`
+  })
   messages.push({
     speaker: 'Technical',
-    text: `Closest object: ${closest.agent.type} (ID: ${closest.agent.id.slice(0, 8)}). Range: ${closest.dist.toFixed(2)}m. Relative speed: ${relSpeed.toFixed(1)} m/s. ${closestApproaching ? 'Object in motion.' : 'Object stationary.'} TTC: ${closestApproaching && relSpeed > 0.1 ? (closest.dist / relSpeed).toFixed(1) + 's' : 'N/A'}.`,
+    text: `Perception report — top ${top3.length} tracked objects:\n${techLines.join('\n')}`,
   })
 
-  // Concierge: contextual
-  if (egoState.speed < 1) {
-    messages.push({
-      speaker: 'Concierge',
-      text: `We're currently stopped. ${nearby.length} road user${nearby.length > 1 ? 's' : ''} around us. Everything looks calm — we'll get moving when it's clear.`,
-    })
-  } else {
-    messages.push({
-      speaker: 'Concierge',
-      text: `Cruising at ${egoSpeedMph} mph with ${nearby.length} nearby road users. All distances look safe. Enjoy the ride.`,
-    })
-  }
+  // === MINIMALIST: One-liner summary ===
+  const threat = crossing.length > 0 ? 'crosser' :
+                 approaching.filter(a => a.dist < 15).length > 0 ? 'approach' : 'clear'
+  messages.push({
+    speaker: 'Minimalist',
+    text: threat === 'crosser'
+      ? `${crossing[0].agent.type} crossing ${crossing[0].dist.toFixed(0)}m. Tracking.`
+      : threat === 'approach'
+      ? `${approaching[0].agent.type} approaching from ${approaching[0].position}, ${approaching[0].dist.toFixed(0)}m.`
+      : `${nearby.length} tracked, nearest ${closest.dist.toFixed(0)}m. Clear.`,
+  })
 
-  // Front screen
-  const headline = peds.length > 0
-    ? `${peds.length} pedestrian${peds.length > 1 ? 's' : ''} in view`
-    : cyclists.length > 0
-    ? `cyclist nearby — ${cyclists[0].dist.toFixed(0)}m`
-    : `${vehicles.length} vehicles tracked`
+  // Build channel outputs from vision data
+  const hasThreat = crossing.length > 0 || approaching.filter(a => a.dist < 10).length > 0
+  const primaryAgent = crossing[0] || approaching[0] || closest
 
-  const body = `Traveling at ${egoSpeedMph} mph. Nearest ${closest.agent.type} is ${closest.dist.toFixed(0)}m away. All agents monitored — no action needed.`
+  const headline = crossing.length > 0
+    ? `${crossing[0].agent.type} crossing path — ${crossing[0].dist.toFixed(0)}m`
+    : approaching.length > 0 && approaching[0].dist < 20
+    ? `${approaching[0].agent.type} approaching — ${approaching[0].dist.toFixed(0)}m`
+    : peds.length > 0
+    ? `pedestrian ${peds[0].position} — ${peds[0].dist.toFixed(0)}m`
+    : `${nearby.length} agents tracked — clear`
 
   return {
     agentConversation: messages,
     frontScreen: {
       headline,
-      body,
-      icon: peds.length > 0 ? 'safety' : 'info',
+      body: `Speed: ${egoSpeedMph} mph. ${nearby.length} objects in view. ` +
+        `Nearest: ${primaryAgent.agent.type} ${primaryAgent.position} at ${primaryAgent.dist.toFixed(0)}m, ` +
+        `${primaryAgent.direction}. ` +
+        (primaryAgent.approaching
+          ? `Closing at ${Math.abs(primaryAgent.closingRate).toFixed(1)} m/s.`
+          : `Stable distance.`),
+      icon: hasThreat ? 'warning' : peds.length > 0 ? 'safety' : 'info',
+      etaImpact: crossing.length > 0 ? `Possible yield — monitoring ${crossing[0].agent.type}` : undefined,
     },
     rearScreen: {
-      headline: egoState.speed < 1 ? 'Holding position' : 'On track',
-      comfortNote: egoState.speed < 1
-        ? `Stopped safely. ${nearby.length} road users nearby, all at safe distance.`
-        : `Moving smoothly at ${egoSpeedMph} mph. Clear path ahead.`,
-      icon: 'info',
+      headline: egoState.speed < 0.5 ? 'Holding position' :
+                hasThreat ? 'Monitoring situation' : 'Cruising smoothly',
+      comfortNote: crossing.length > 0
+        ? `We see a ${crossing[0].agent.type} crossing ahead. Tracking them carefully — ${crossing[0].dist > 10 ? 'safe margin maintained' : 'ready to slow down if needed'}.`
+        : egoState.speed < 0.5
+        ? `Stopped. ${nearby.length} road users nearby. Waiting for a safe gap.`
+        : `Moving at ${egoSpeedMph} mph. All ${nearby.length} nearby road users at safe distance. Relax and enjoy.`,
+      icon: hasThreat ? 'safety' : 'info',
     },
     appNotification: {
-      title: peds.length > 0 ? 'Pedestrian Detected' : 'Scene Update',
-      body: `${scanParts.join(', ')} in proximity. Closest at ${closest.dist.toFixed(0)}m. No intervention needed.`,
-      priority: closest.dist < 10 ? 'medium' : 'low',
+      title: crossing.length > 0
+        ? `${crossing[0].agent.type.charAt(0).toUpperCase() + crossing[0].agent.type.slice(1)} Crossing Path`
+        : approaching.length > 0 && approaching[0].dist < 15
+        ? `${approaching[0].agent.type.charAt(0).toUpperCase() + approaching[0].agent.type.slice(1)} Approaching`
+        : 'Scene Update',
+      body: `${nearby.length} road users detected. Closest: ${closest.agent.type} at ${closest.dist.toFixed(0)}m (${closest.position}). ` +
+        (approaching.length > 0 ? `${approaching.length} approaching. ` : '') +
+        (crossing.length > 0 ? `${crossing.length} crossing trajectory. ` : '') +
+        `Status: monitoring.`,
+      priority: crossing.length > 0 && crossing[0].dist < 10 ? 'high' :
+                hasThreat ? 'medium' : 'low',
     },
     voice: {
-      text: peds.length > 0 && peds[0].dist < 15
-        ? `Pedestrian ahead, ${peds[0].dist.toFixed(0)} meters. We see them.`
-        : `All clear. ${nearby.length} road users nearby, maintaining safe distance.`,
-      tone: closest.dist < 10 ? 'informative' : 'calm',
+      text: crossing.length > 0 && crossing[0].dist < 15
+        ? `${crossing[0].agent.type} crossing ahead, ${crossing[0].dist.toFixed(0)} meters. We see them and are tracking.`
+        : peds.length > 0 && peds[0].dist < 15
+        ? `Pedestrian ${peds[0].position}, ${peds[0].dist.toFixed(0)} meters. ${peds[0].approaching ? 'Approaching — monitoring.' : 'Safe distance.'}`
+        : approaching.length > 0 && approaching[0].dist < 20
+        ? `${approaching[0].agent.type} approaching from the ${approaching[0].position}, ${approaching[0].dist.toFixed(0)} meters.`
+        : `${nearby.length} road users nearby. All clear.`,
+      tone: crossing.length > 0 && crossing[0].dist < 10 ? 'urgent' :
+            hasThreat ? 'informative' : 'calm',
     },
   }
 }
